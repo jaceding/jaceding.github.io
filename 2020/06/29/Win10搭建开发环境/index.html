@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Git,Java,Python,Win10,NodeJs,Maven," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/myfavicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Java开发环境安装包：jdk-8u231-windows-x64.exe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Win10搭建开发环境">
+<meta property="og:url" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/index.html">
+<meta property="og:site_name" content="Jace Ding">
+<meta property="og:description" content="Java开发环境安装包：jdk-8u231-windows-x64.exe">
+<meta property="og:image" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E5%AE%89%E8%A3%85python.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E9%AA%8C%E8%AF%81python.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E9%AA%8C%E8%AF%81pip%E6%BA%90.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E9%AA%8C%E8%AF%81pip%E6%BA%90.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/hadoop%E9%AA%8C%E8%AF%81.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/winutils%E9%AA%8C%E8%AF%81.png">
+<meta property="article:published_time" content="2020-06-29T10:54:39.000Z">
+<meta property="article:modified_time" content="2020-08-11T09:42:49.952Z">
+<meta property="article:author" content="Jace Ding">
+<meta property="article:tag" content="Git">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="Win10">
+<meta property="article:tag" content="NodeJs">
+<meta property="article:tag" content="Maven">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E5%AE%89%E8%A3%85python.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaceding.github.io/2020/06/29/Win10搭建开发环境/"/>
+
+
+
+
+
+  <title>Win10搭建开发环境 | Jace Ding</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?a5b3b0af00f4af4a78fb52c6720825d5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Jace Ding</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Win10搭建开发环境</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-06-29T18:54:39+08:00">
+                2020-06-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/" itemprop="url" rel="index">
+                    <span itemprop="name">环境搭建</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Java开发环境"><a href="#Java开发环境" class="headerlink" title="Java开发环境"></a>Java开发环境</h2><p>安装包：<strong>jdk-8u231-windows-x64.exe</strong></p>
+<a id="more"></a>
+
+<h3 id="安装jdk"><a href="#安装jdk" class="headerlink" title="安装jdk"></a>安装jdk</h3><p>直接双击安装包即可，推荐安装默认目录：<code>C:\Program Files\Java</code></p>
+<h3 id="环境变量配置"><a href="#环境变量配置" class="headerlink" title="环境变量配置"></a>环境变量配置</h3><p>右键点击 “此电脑”的“属性” ——》选择 “高级系统设置” 选项 ——》选择 “环境变量”</p>
+<h4 id="新建JAVA-HOME系统变量"><a href="#新建JAVA-HOME系统变量" class="headerlink" title="新建JAVA_HOME系统变量"></a>新建JAVA_HOME系统变量</h4><p>变量名：<code>JAVA_HOME</code></p>
+<p>变量值：<code>C:\Program Files\Java\jdk1.8.0_231</code></p>
+<h4 id="编辑Path系统变量"><a href="#编辑Path系统变量" class="headerlink" title="编辑Path系统变量"></a>编辑Path系统变量</h4><p>分别添加</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&#96;&#96;&#96;%JAVA_HOME%\jre\bin</span><br></pre></td></tr></table></figure>
+
+<h4 id="新建CLASSPATH系统变量"><a href="#新建CLASSPATH系统变量" class="headerlink" title="新建CLASSPATH系统变量"></a>新建<strong>CLASSPATH</strong>系统变量</h4><p>变量名：<code>CLASSPATH</code></p>
+<p>变量值：<code>.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar</code></p>
+<h4 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h4><p>需全部输入一遍，如输入<code>javac</code>出现<strong>javac不是内部或外部命令,也不是可运行的程序</strong>，检查Path和CLASSPATH系统变量是否正确</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">java -version</span><br><span class="line">java</span><br><span class="line">javac</span><br></pre></td></tr></table></figure>
+
+<h2 id="Python开发环境"><a href="#Python开发环境" class="headerlink" title="Python开发环境"></a>Python开发环境</h2><p>安装包：<strong>python-3.7.4.exe</strong></p>
+<h3 id="安装python"><a href="#安装python" class="headerlink" title="安装python"></a>安装python</h3><p>直接双击安装包，选择：</p>
+<img src="/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E5%AE%89%E8%A3%85python.png" class="" title="安装python">
+
+<p>选择<code>install for all users</code></p>
+<p>推荐默认安装路径：<code>C:\Program Files (x86)\Python37-32</code>，其他都用默认设置</p>
+<h3 id="验证-1"><a href="#验证-1" class="headerlink" title="验证"></a>验证</h3><p>因为已经在安装的时候添加环境变量，所以直接在命令行窗口（Ctrl + R，输入cmd）下，输入python，出现如下字样说明安装成功</p>
+<img src="/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E9%AA%8C%E8%AF%81python.png" class="" title="验证python">
+
+<h3 id="修改pip源"><a href="#修改pip源" class="headerlink" title="修改pip源"></a>修改pip源</h3><p><strong>不推荐升级python自带的pip版本</strong></p>
+<p>暂时使用第三方pip源</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip -i http://pypi.douban.com/simple install selenium -- trusted-host pypi.douban.com</span><br></pre></td></tr></table></figure>
+
+<p>永久修改</p>
+<p>在user目录中创建一个pip目录,如<code>C:\Users\93197\pip</code>，新建文件<code>pip.ini</code>，写入：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[global]</span><br><span class="line">global.index-url='http://pypi.douban.com/simple'</span><br><span class="line">global.timeout='6000'</span><br><span class="line">global.trusted-host='pypi.douban.com'</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证pip源</strong></p>
+<p>安装requests库，<code>pip install requests</code>，安装完后可以卸载<code>pip uninstall requests</code></p>
+<img src="/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E9%AA%8C%E8%AF%81pip%E6%BA%90.png" class="" title="验证pip源">
+
+<p>查看下载地址是否为设置的源地址</p>
+<h2 id="NodeJS开发环境"><a href="#NodeJS开发环境" class="headerlink" title="NodeJS开发环境"></a>NodeJS开发环境</h2><p>安装包：<strong>node-v12.16.1-x64.msi</strong></p>
+<h3 id="安装node"><a href="#安装node" class="headerlink" title="安装node"></a>安装node</h3><p>直接双击安装包，推荐安装默认目录：<code>C:\Program Files\nodejs\</code>，一直下一步即可。</p>
+<h3 id="验证-2"><a href="#验证-2" class="headerlink" title="验证"></a>验证</h3><p>一般系统会自动加入环境变量，分别输入<code>node -v</code>和<code>npm -v</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">C:\Windows\system32&gt;node -v</span><br><span class="line">v12.16.1</span><br><span class="line"></span><br><span class="line">C:\Windows\system32&gt;npm -v</span><br><span class="line">6.13.4</span><br></pre></td></tr></table></figure>
+
+<h3 id="设置npm源"><a href="#设置npm源" class="headerlink" title="设置npm源"></a>设置npm源</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm config set registry "https://registry.npm.taobao.org"</span><br></pre></td></tr></table></figure>
+
+<h3 id="编辑Path系统变量-1"><a href="#编辑Path系统变量-1" class="headerlink" title="编辑Path系统变量"></a>编辑Path系统变量</h3><p>添加<code>D:\Repository\nodejs\node_global</code></p>
+<h3 id="修改npm全局模块目录和缓存目录"><a href="#修改npm全局模块目录和缓存目录" class="headerlink" title="修改npm全局模块目录和缓存目录"></a>修改npm全局模块目录和缓存目录</h3><p>全局模块目录：<code>D:\Repository\nodejs\node_global</code></p>
+<p>缓存目录：<code>D:\Repository\nodejs\node_cache</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 设置全局模块目录</span></span><br><span class="line">npm config set prefix "D:\Repository\nodejs\node_global"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 设置缓存目录</span></span><br><span class="line">npm config set cache "D:\Repository\nodejs\node_cache"</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看配置"><a href="#查看配置" class="headerlink" title="查看配置"></a>查看配置</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看基本配置 </span></span><br><span class="line">npm config list</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看所有配置</span></span><br><span class="line">npm config list -l</span><br></pre></td></tr></table></figure>
+
+<h2 id="Git"><a href="#Git" class="headerlink" title="Git"></a>Git</h2><p>安装包：<strong>Git-2.26.2-64-bit.exe</strong></p>
+<h3 id="安装git"><a href="#安装git" class="headerlink" title="安装git"></a>安装git</h3><p>直接双击，推荐默认安装目录</p>
+<h3 id="设置用户信息"><a href="#设置用户信息" class="headerlink" title="设置用户信息"></a>设置用户信息</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global user.name "jaceding"</span><br><span class="line">git config --global user.email "931977674@qq.com"</span><br></pre></td></tr></table></figure>
+
+<h2 id="Maven"><a href="#Maven" class="headerlink" title="Maven"></a>Maven</h2><p><strong>安装maven之前需安装jdk</strong></p>
+<p>安装包：<strong>apache-maven-3.6.3.zip</strong></p>
+<p>解压目录：<strong>D:\Common\apache-maven-3.6.3</strong></p>
+<h3 id="环境变量配置-1"><a href="#环境变量配置-1" class="headerlink" title="环境变量配置"></a>环境变量配置</h3><h4 id="新建MAVEN-HOME系统变量"><a href="#新建MAVEN-HOME系统变量" class="headerlink" title="新建MAVEN_HOME系统变量"></a>新建MAVEN_HOME系统变量</h4><p>变量名：<code>MAVEN_HOME</code></p>
+<p>变量值：<code>D:\Common\apache-maven-3.6.3</code></p>
+<h4 id="编辑Path系统变量-2"><a href="#编辑Path系统变量-2" class="headerlink" title="编辑Path系统变量"></a>编辑Path系统变量</h4><p>添加：<code>%MAVEN_HOME%\bin\</code></p>
+<h4 id="验证-3"><a href="#验证-3" class="headerlink" title="验证"></a>验证</h4><p>输入<code>mvn -v</code>，出现如下字样说明成功</p>
+<img src="/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E9%AA%8C%E8%AF%81pip%E6%BA%90.png" class="" title="验证pip源">
+
+<h4 id="修改源和仓库地址"><a href="#修改源和仓库地址" class="headerlink" title="修改源和仓库地址"></a>修改源和仓库地址</h4><p>修改<code>D:\Common\apache-maven-3.6.3\conf</code>目录下的<code>settings.xml</code></p>
+<p><strong>修改源地址</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">mirror</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">id</span>&gt;</span>nexus-aliyun<span class="tag">&lt;/<span class="name">id</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">mirrorOf</span>&gt;</span>central<span class="tag">&lt;/<span class="name">mirrorOf</span>&gt;</span>    </span><br><span class="line">    <span class="tag">&lt;<span class="name">name</span>&gt;</span>Nexus aliyun<span class="tag">&lt;/<span class="name">name</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">url</span>&gt;</span>http://maven.aliyun.com/nexus/content/groups/public<span class="tag">&lt;/<span class="name">url</span>&gt;</span>  </span><br><span class="line"><span class="tag">&lt;/<span class="name">mirror</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>修改本地仓库位置</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">localRepository</span>&gt;</span>D:\Repository\Maven<span class="tag">&lt;/<span class="name">localRepository</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Hadoop3"><a href="#Hadoop3" class="headerlink" title="Hadoop3"></a>Hadoop3</h2><h3 id="下载和解压"><a href="#下载和解压" class="headerlink" title="下载和解压"></a>下载和解压</h3><p>官网下载二进制文件：<a href="https://www.apache.org/dyn/closer.cgi/hadoop/common/hadoop-3.2.1/hadoop-3.2.1.tar.gz" target="_blank" rel="noopener">hadoop-3.2.1.tar.gz</a></p>
+<p>必须使用管理员解压：hadoop-3.2.1.tar.gz（可以先找到解压软件的位置，然后以管理员身份运行，然后解压）</p>
+<p>这里解压至<code>D:\ITProgram\hadoop-3.2.1</code></p>
+<h3 id="环境变量配置-2"><a href="#环境变量配置-2" class="headerlink" title="环境变量配置"></a>环境变量配置</h3><h4 id="新建HADOOP-HOME系统变量"><a href="#新建HADOOP-HOME系统变量" class="headerlink" title="新建HADOOP_HOME系统变量"></a>新建HADOOP_HOME系统变量</h4><p>变量名：<code>HADOOP_HOME</code></p>
+<p>变量值：<code>D:\ITProgram\hadoop-3.2.1</code></p>
+<h4 id="编辑Path系统变量-3"><a href="#编辑Path系统变量-3" class="headerlink" title="编辑Path系统变量"></a>编辑Path系统变量</h4><p>分别添加</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash">HADOOP_HOME%\bin</span></span><br><span class="line"><span class="meta">%</span><span class="bash">HADOOP_HOME%\sbin</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h3><p>找到<code>D:\ITProgram\hadoop-3.2.1\etc\hadoop\hadoop-env.cmd</code>文件</p>
+<p>将<code>set JAVA_HOME=%JAVA_HOME%</code>修改为<code>set JAVA_HOME=C:\PROGRA~1\Java\jdk1.8.0_231</code></p>
+<p>上面需要将JAVA_HOME修改为实际的jdk安装路径，并且如果jdk安装路径中包含空格，需要使用<code>~1</code>代替</p>
+<p>例如，<code>C:\Program Files\Java\jdk1.8.0_231</code>改为<code>C:\PROGRA~1\Java\jdk1.8.0_231</code></p>
+<h3 id="验证-4"><a href="#验证-4" class="headerlink" title="验证"></a>验证</h3><p>命令行窗口输入：<code>hadoop version</code>，出现如下字样说明成功</p>
+<img src="/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/hadoop%E9%AA%8C%E8%AF%81.png" class="" title="hadoop验证">
+
+<h3 id="添加winutils"><a href="#添加winutils" class="headerlink" title="添加winutils"></a>添加winutils</h3><p>下载地址：<a href="https://github.com/cdarlint/winutils" target="_blank" rel="noopener">https://github.com/cdarlint/winutils</a></p>
+<p>将winutils对应版本bin目录下的文件复制到hadoop\bin目录下</p>
+<p>把winutils对应版本的<code>hadoop.dll</code>和<code>winutils.exe</code>放到c:\windows\system32目录下</p>
+<p>命令行窗口输入：<code>winutils</code>，出现如下字样说明成功</p>
+<img src="/2020/06/29/Win10%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/winutils%E9%AA%8C%E8%AF%81.png" class="" title="winutils验证">
+
+<p><strong>如果不行重启IDEA或者重启电脑试试</strong></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Jace Ding WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Jace Ding Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Git/" rel="tag"># Git</a>
+          
+            <a href="/tags/Java/" rel="tag"># Java</a>
+          
+            <a href="/tags/Python/" rel="tag"># Python</a>
+          
+            <a href="/tags/Win10/" rel="tag"># Win10</a>
+          
+            <a href="/tags/NodeJs/" rel="tag"># NodeJs</a>
+          
+            <a href="/tags/Maven/" rel="tag"># Maven</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/06/29/CentOS7%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/" rel="next" title="CentOS7环境配置">
+                <i class="fa fa-chevron-left"></i> CentOS7环境配置
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/07/01/Hadoop3%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" rel="prev" title="Hadoop3集群搭建">
+                Hadoop3集群搭建 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jace Ding" />
+          <p class="site-author-name" itemprop="name">Jace Ding</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/jaceding" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:931977674@qq.com" target="_blank" title="E-Mail">
+                  
+                    <i class="fa fa-fw fa-envelope"></i>
+                  
+                    
+                      E-Mail
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Java开发环境"><span class="nav-number">1.</span> <span class="nav-text">Java开发环境</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装jdk"><span class="nav-number">1.1.</span> <span class="nav-text">安装jdk</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#环境变量配置"><span class="nav-number">1.2.</span> <span class="nav-text">环境变量配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#新建JAVA-HOME系统变量"><span class="nav-number">1.2.1.</span> <span class="nav-text">新建JAVA_HOME系统变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编辑Path系统变量"><span class="nav-number">1.2.2.</span> <span class="nav-text">编辑Path系统变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#新建CLASSPATH系统变量"><span class="nav-number">1.2.3.</span> <span class="nav-text">新建CLASSPATH系统变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#验证"><span class="nav-number">1.2.4.</span> <span class="nav-text">验证</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python开发环境"><span class="nav-number">2.</span> <span class="nav-text">Python开发环境</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装python"><span class="nav-number">2.1.</span> <span class="nav-text">安装python</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#验证-1"><span class="nav-number">2.2.</span> <span class="nav-text">验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改pip源"><span class="nav-number">2.3.</span> <span class="nav-text">修改pip源</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NodeJS开发环境"><span class="nav-number">3.</span> <span class="nav-text">NodeJS开发环境</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装node"><span class="nav-number">3.1.</span> <span class="nav-text">安装node</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#验证-2"><span class="nav-number">3.2.</span> <span class="nav-text">验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置npm源"><span class="nav-number">3.3.</span> <span class="nav-text">设置npm源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编辑Path系统变量-1"><span class="nav-number">3.4.</span> <span class="nav-text">编辑Path系统变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改npm全局模块目录和缓存目录"><span class="nav-number">3.5.</span> <span class="nav-text">修改npm全局模块目录和缓存目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看配置"><span class="nav-number">3.6.</span> <span class="nav-text">查看配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Git"><span class="nav-number">4.</span> <span class="nav-text">Git</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装git"><span class="nav-number">4.1.</span> <span class="nav-text">安装git</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置用户信息"><span class="nav-number">4.2.</span> <span class="nav-text">设置用户信息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Maven"><span class="nav-number">5.</span> <span class="nav-text">Maven</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#环境变量配置-1"><span class="nav-number">5.1.</span> <span class="nav-text">环境变量配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#新建MAVEN-HOME系统变量"><span class="nav-number">5.1.1.</span> <span class="nav-text">新建MAVEN_HOME系统变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编辑Path系统变量-2"><span class="nav-number">5.1.2.</span> <span class="nav-text">编辑Path系统变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#验证-3"><span class="nav-number">5.1.3.</span> <span class="nav-text">验证</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#修改源和仓库地址"><span class="nav-number">5.1.4.</span> <span class="nav-text">修改源和仓库地址</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop3"><span class="nav-number">6.</span> <span class="nav-text">Hadoop3</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#下载和解压"><span class="nav-number">6.1.</span> <span class="nav-text">下载和解压</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#环境变量配置-2"><span class="nav-number">6.2.</span> <span class="nav-text">环境变量配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#新建HADOOP-HOME系统变量"><span class="nav-number">6.2.1.</span> <span class="nav-text">新建HADOOP_HOME系统变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编辑Path系统变量-3"><span class="nav-number">6.2.2.</span> <span class="nav-text">编辑Path系统变量</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改配置文件"><span class="nav-number">6.3.</span> <span class="nav-text">修改配置文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#验证-4"><span class="nav-number">6.4.</span> <span class="nav-text">验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#添加winutils"><span class="nav-number">6.5.</span> <span class="nav-text">添加winutils</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jace Ding</span>
+</div>
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

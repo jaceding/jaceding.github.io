@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="volatile,内存屏障," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/myfavicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Java 提供了一种稍弱的同步机制，即 volatile 变量，用来确保将变量的更新操作通知到其他线程。可以将 volatile 看做一个轻量级的锁，它可以保证线程可见性，防止指令重排序，但不能保证变量状态的“原子性操作”。 保证线程可见性在下面的例子中，如果不加volatile关键字修饰flag变量，程序不会输出“end”。 1234567891011121314151617public cla">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解volatile">
+<meta property="og:url" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/index.html">
+<meta property="og:site_name" content="Jace Ding">
+<meta property="og:description" content="Java 提供了一种稍弱的同步机制，即 volatile 变量，用来确保将变量的更新操作通知到其他线程。可以将 volatile 看做一个轻量级的锁，它可以保证线程可见性，防止指令重排序，但不能保证变量状态的“原子性操作”。 保证线程可见性在下面的例子中，如果不加volatile关键字修饰flag变量，程序不会输出“end”。 1234567891011121314151617public cla">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E7%BC%93%E5%AD%98%E8%A1%8C%E7%8A%B6%E6%80%81.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E9%87%8D%E6%8E%92%E5%BA%8F%E7%B1%BB%E5%9E%8B.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E6%8C%87%E4%BB%A4%E9%87%8D%E6%8E%92%E5%BA%8F.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E8%BF%87%E7%A8%8B.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/volatile%E5%AD%97%E8%8A%82%E7%A0%81%E5%AE%9E%E7%8E%B0-1.png">
+<meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/volatile%E5%AD%97%E8%8A%82%E7%A0%81%E5%AE%9E%E7%8E%B0-2.png">
+<meta property="article:published_time" content="2020-05-11T02:55:10.000Z">
+<meta property="article:modified_time" content="2020-08-14T09:07:20.002Z">
+<meta property="article:author" content="Jace Ding">
+<meta property="article:tag" content="volatile">
+<meta property="article:tag" content="内存屏障">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaceding.github.io/2020/05/11/深入理解volatile/"/>
+
+
+
+
+
+  <title>深入理解volatile | Jace Ding</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?a5b3b0af00f4af4a78fb52c6720825d5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Jace Ding</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">深入理解volatile</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-11T10:55:10+08:00">
+                2020-05-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Java 提供了一种稍弱的同步机制，即 volatile 变量，用来确保将变量的更新操作通知到其他线程。可以将 volatile 看做一个轻量级的锁，<strong>它可以保证线程可见性，防止指令重排序，但不能保证变量状态的“原子性操作”</strong>。</p>
+<h3 id="保证线程可见性"><a href="#保证线程可见性" class="headerlink" title="保证线程可见性"></a>保证线程可见性</h3><p>在下面的例子中，如果不加<strong>volatile</strong>关键字修饰flag变量，程序不会输出“end”。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestVolatile</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> flag = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">new</span> Thread(()-&gt; &#123;</span><br><span class="line">            <span class="keyword">while</span> (flag) &#123;</span><br><span class="line">                <span class="comment">//do sth</span></span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(<span class="string">"end"</span>);</span><br><span class="line">        &#125;, <span class="string">"server"</span>).start();</span><br><span class="line"></span><br><span class="line">        Thread.sleep(<span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line">        flag = <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+<h4 id="Java内存模型（JMM）"><a href="#Java内存模型（JMM）" class="headerlink" title="Java内存模型（JMM）"></a>Java内存模型（JMM）</h4><p>在JVM的内存模型中，每个线程有自己的工作内存，实际上JAVA线程借助了底层操作系统线程实现，一个JVM线程对应一个操作系统线程，线程的工作内存其实是cpu寄存器和高速缓存的抽象。</p>
+<p>现代处理器的缓存一般分为三级，由每一个核心独享的L1、L2 Cache，以及所有的核心共享L3 Cache组成，具体每个cache，实际上是有很多缓存行组成：</p>
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.png" class="" title="Java内存模型">
+
+<h4 id="缓存一致性和MESI"><a href="#缓存一致性和MESI" class="headerlink" title="缓存一致性和MESI"></a>缓存一致性和MESI</h4><p><strong>缓存一致性协议给缓存行（通常为64字节）定义了个状态：独占（exclusive）、共享（share）、修改（modified）、失效（invalid），用来描述该缓存行是否被多处理器共享、是否修改。所以缓存一致性协议也称MESI协议（Modified, Exclusive, Shared, Invalid）。</strong></p>
+<ul>
+<li><strong>独占（Exclusive）</strong>：仅当前处理器拥有该缓存行，并且没有修改过，是最新的值。</li>
+<li><strong>共享（Shared）</strong>：有多个处理器拥有该缓存行，每个处理器都没有修改过缓存，是最新的值。</li>
+<li><strong>修改（Modified）</strong>：仅当前处理器拥有该缓存行，并且缓存行被修改过了，一定时间内会写回主存，会写成功状态会变为S。</li>
+<li><strong>失效（Invalid）</strong>：缓存行被其他处理器修改过，该值不是最新的值，需要读取主存上最新的值。</li>
+</ul>
+<p><strong>协议协作如下：</strong></p>
+<ol>
+<li>一个处于M状态的缓存行，必须时刻监听所有试图读取该缓存行对应的主存地址的操作，如果监听到，则必须在此操作执行前把其缓存行中的数据写回CPU。</li>
+<li>一个处于S状态的缓存行，必须时刻监听使该缓存行无效或者独享该缓存行的请求，如果监听到，则必须把其缓存行状态设置为I。</li>
+<li>一个处于E状态的缓存行，必须时刻监听其他试图读取该缓存行对应的主存地址的操作，如果监听到，则必须把其缓存行状态设置为S。</li>
+<li>当CPU需要读取数据时，如果其缓存行的状态是I的，则需要从内存中读取，并把自己状态变成S，如果不是I，则可以直接读取缓存中的值，但在此之前，必须要等待其他CPU的监听结果，如其他CPU也有该数据的缓存且状态是M，则需要等待其把缓存更新到内存之后，再读取。</li>
+<li>当CPU需要写数据时，只有在其缓存行是M或者E的时候才能执行，否则需要发出特殊的RFO指令(Read Or Ownership，这是一种总线事务)，通知其他CPU置缓存无效(I)，这种情况下会性能开销是相对较大的。在写入完成后，修改其缓存状态为M。</li>
+</ol>
+<p>关系如下图：</p>
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E7%BC%93%E5%AD%98%E8%A1%8C%E7%8A%B6%E6%80%81.png" class="" title="缓存行状态">
+
+<p>这个图的含义就是：地址 0x00010000 对应的cacheline在core0上为状态M, 则其它所有的core对应于0x00010000的cacheline都必须为I , 0x00010000 对应的cacheline在core0上为状态S, 则其它所有的core对应于0x00010000的cacheline 可以是S或者I 。</p>
+<p><strong>MESI 协议为了提高性能，引入了存储缓存/写缓存器（Store Buffer/Write Buffer）和失效队列（Invalidate Queues），但还是有可能会引起缓存不一致，还会再引入内存屏障来确保一致性。</strong></p>
+<p><strong>解释一下这里为什么还可能引起缓存不一致</strong>：</p>
+<ol>
+<li><p>是编译器的优化带来的问题。我们都知道，从寄存器里面取一个数要比从内存中取快的多，所以有时候编译器为了编译出优化度更高的程序，就会把一些常用变量放到寄存器中，下次使用该变量的时候就直接从寄存器中取，而不再访问内存，就有会出现问题。</p>
+</li>
+<li><p>write buffer和invalidate queue带来的问题，下面会介绍。</p>
+</li>
+</ol>
+<h4 id="写缓存器、失效队列"><a href="#写缓存器、失效队列" class="headerlink" title="写缓存器、失效队列"></a>写缓存器、失效队列</h4><p>MESI 协议解决了缓存一致性问题， 但是其自身也存在一个性能弱点——处理器执行写内存操作时，必须等待其他所有处理器将其高速缓存中的相应副本数据删除并接收到这些处理器所回复的 Invalidate Acknowledge/Read Response消息之后才能将数据写入高速缓存。无论a之前的值为何，在该条指令执行后都会被覆盖，因此这段等待的开销是完全没有必要的。</p>
+<p>写缓冲器和无效化队列的引入又会带来一些新的问题——内存重排序和可见性问题。</p>
+<p><strong>存储缓存/写缓存器（Store Buffer/Write Buffer）</strong></p>
+<p>也就是常说的写缓存器，当处理器修改缓存时，把新值放到存储缓存中，处理器就可以去干别的事了，把剩下的事交给存储缓存（因为对变量a进行写操作时，无论a之前的值为何，在该条指令执行后都会被覆盖，因此这段等待的开销是完全没有必要的）。但这么做会有两个风险：</p>
+<ol>
+<li><p>由于store buffer的存在，在CPU中同一个变量可能存在两份拷贝(当缓存行到达CPU时，缓存和store buffer中存在同一个变量的两份拷贝)，这无疑破坏了缓存的一致性，若CPU在store buffer写入缓存之前load数据，就会拿到旧的数据。（为了解决这个问题，CPU设计者又加入了<strong>store forwarding</strong>机制，简单的讲就是CPU会优先从store buffer中取变量，保证同一时刻一个变量在单个CPU中的一致性。）</p>
+</li>
+<li><p>保存什么时候会完成，这个并没有任何保证。这样可能会导致内存重排序：</p>
+<p>在下面这个程序中，假设CPU A执行”exeToCPUA“方法，CPU B执行”exeToCPUB“方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">value = <span class="number">3</span>；</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">exeToCPUA</span><span class="params">()</span></span>&#123;</span><br><span class="line">  value = <span class="number">10</span>;</span><br><span class="line">  isFinsh = <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">exeToCPUB</span><span class="params">()</span></span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(isFinsh)&#123;</span><br><span class="line">    <span class="comment">//value一定等于10？！</span></span><br><span class="line">    <span class="keyword">assert</span> value == <span class="number">10</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>试想一下开始执行前，CPU A保存着finished在E(独享)状态，而value并没有保存在它的缓存中（例如Invalid）。在这种情况下，value会比finished更迟地抛弃存储缓存。完全有可能CPU B读取finished的值为true，而value的值不等于10。</p>
+<p><strong>即isFinsh的赋值在value赋值之前。</strong>这种在可识别的行为中发生的变化称为内存重排序（reordings）。<strong>注意：这里和发生在编译器中的指令重排序不一样。</strong></p>
+<p>从上面的例子可以看出，一致性问题的出现来源于数据之间的隐式依赖，也就是说必须保证某个操作在另外一个操作之前完成。但是<strong>CPU是无法探测到这种隐式相关性的，必须由程序员自己来进行控制。因此CPU提供了内存屏障指令，该指令使得屏障之前的写操作都在屏障之后的写操作之前完成</strong>。</p>
+</li>
+</ol>
+<p><strong>失效队列（Invalidate Queues）</strong></p>
+<p>处理失效的缓存也不是简单的，需要读取主存。并且存储缓存也不是无限大的，那么当存储缓存满的时候，处理器还是要等待失效响应的。为了解决上面两个问题，引进了失效队列（invalidate queue）。处理失效的工作如下：</p>
+<ul>
+<li>收到失效消息时，放到失效队列中去。</li>
+<li>为了不让处理器久等失效响应，收到失效消息需要马上回复失效响应。</li>
+<li>为了不频繁阻塞处理器，不会马上读主存以及设置缓存为invlid，合适的时候再一块处理失效队列。</li>
+</ul>
+<h4 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h4><p>“由于编译器的优化和缓存的使用，导致对内存的写入操作不能及时的反应出来，也就是说当完成对内存的写入操作之后，读取出来的可能是旧的内容” ——《独辟蹊径品内核》</p>
+<p>硬件层的内存屏障分为两种：<strong>Load Barrier（读屏障） 和 Store Barrier（写屏障）</strong>。写屏障保证屏障之前的写操作对其他CPU都是可见的；读屏障保证屏障之后的读操作读到的都是最新的数据。内存屏障有两个作用：</p>
+<ol>
+<li>阻止屏障两侧的指令重排序；</li>
+<li>强制把写缓冲区/高速缓存中的脏数据等写回主内存，让缓存中相应的数据失效。</li>
+</ol>
+<p>在JSR规范中定义了4种内存屏障：</p>
+<ul>
+<li><strong>LoadLoad屏障</strong>：（指令Load1; LoadLoad; Load2），在Load2及后续读取操作要读取的数据被访问前，保证Load1要读取的数据被读取完毕。</li>
+<li><strong>LoadStore屏障</strong>：（指令Load1; LoadStore; Store2），在Store2及后续写入操作被刷出前，保证Load1要读取的数据被读取完毕。</li>
+<li><strong>StoreStore屏障</strong>：（指令Store1; StoreStore; Store2），在Store2及后续写入操作执行前，保证Store1的写入操作对其它处理器可见。</li>
+<li><strong>StoreLoad屏障</strong>：（指令Store1; StoreLoad; Load2），在Load2及后续所有读取操作执行前，保证Store1的写入对所有处理器可见。它的开销是四种屏障中最大的。<strong>在大多数处理器的实现中，这个屏障是个万能屏障，兼具其它三种内存屏障的功能。</strong></li>
+</ul>
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C.png" class="" title="内存屏障">
+
+<p>从上图可以看出：</p>
+<ol>
+<li>当第二个操作是volatile写时，不管第一个操作是什么，都不能重排序。这个规则确保volatile写之前的操作不会被编译器重排序到volatile写之后。</li>
+<li>当第一个操作是volatile读时，不管第二个操作是什么，都不能重排序。这个规则确保volatile读之后的操作不会被编译器重排序到volatile读之前。</li>
+<li>当第一个操作是volatile写，第二个操作是volatile读时，不能重排序。</li>
+</ol>
+<p>对于volatile关键字，按照规范会有下面的操作：</p>
+<ul>
+<li>在每个volatile写入之前，插入一个StoreStore，写入之后，插入一个StoreLoad</li>
+<li>在每个volatile读取之前，插入LoadLoad，之后插入LoadStore</li>
+</ul>
+<h4 id="缓存行对齐"><a href="#缓存行对齐" class="headerlink" title="缓存行对齐"></a>缓存行对齐</h4><p>缓存行（通常是64个字节）是CPU同步的基本单位，<strong>缓存行隔离会比伪共享（False Sharing）效率要高</strong>。</p>
+<h5 id="伪共享（False-Sharing）"><a href="#伪共享（False-Sharing）" class="headerlink" title="伪共享（False Sharing）"></a>伪共享（False Sharing）</h5><p>如果多个核的线程在操作同一个缓存行中的不同变量数据，那么就会出现频繁的缓存失效，即使在代码层面看这两个线程操作的数据之间完全没有关系。</p>
+<p>这种不合理的资源竞争情况学名伪共享（False Sharing），会严重影响机器的并发执行效率。</p>
+<p>下面这个程序中，T继承Padding类程序的执行时间是不继承Padding类程序的执行时间的3~4倍。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">T02_CacheLinePadding</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Padding</span> </span>&#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">volatile</span> <span class="keyword">long</span> p1, p2, p3, p4, p5, p6, p7; <span class="comment">//</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">T</span> <span class="keyword">extends</span> <span class="title">Padding</span> </span>&#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">volatile</span> <span class="keyword">long</span> x = <span class="number">0L</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> T[] arr = <span class="keyword">new</span> T[<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        arr[<span class="number">0</span>] = <span class="keyword">new</span> T();</span><br><span class="line">        arr[<span class="number">1</span>] = <span class="keyword">new</span> T();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        Thread t1 = <span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">long</span> i = <span class="number">0</span>; i &lt; <span class="number">1000_0000L</span>; i++) &#123;</span><br><span class="line">                arr[<span class="number">0</span>].x = i;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        Thread t2 = <span class="keyword">new</span> Thread(()-&gt;&#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">long</span> i = <span class="number">0</span>; i &lt; <span class="number">1000_0000L</span>; i++) &#123;</span><br><span class="line">                arr[<span class="number">1</span>].x = i;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> start = System.nanoTime();</span><br><span class="line">        t1.start();</span><br><span class="line">        t2.start();</span><br><span class="line">        t1.join();</span><br><span class="line">        t2.join();</span><br><span class="line">        System.out.println((System.nanoTime() - start)/<span class="number">100_0000</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>java 8中引入了一个更加简单的解决方案：<strong><code>@Contended</code>注解</strong>，比如ConcurrentHashMap中的CounterCell类就用到了这个注解。</p>
+<h4 id="更多资料"><a href="#更多资料" class="headerlink" title="更多资料"></a>更多资料</h4><ol>
+<li><a href="http://ifeve.com/disruptor/" target="_blank" rel="noopener">Disruptor消息队列</a></li>
+<li><a href="https://www.jianshu.com/p/a149730f0aec" target="_blank" rel="noopener">写缓冲器与无效化</a></li>
+<li><a href="https://www.toutiao.com/a6674518482819744270/?timestamp=1589209556&app=news_article&group_id=6674518482819744270&req_id=20200511230556010020047017014AB751" target="_blank" rel="noopener">CPU缓存一致性协议MESI，memory barrier和java volatile</a>（这篇不错）</li>
+<li><a href="https://www.jianshu.com/p/2ab5e3d7e510" target="_blank" rel="noopener">内存屏障</a></li>
+<li><a href="https://www.jianshu.com/p/8a58d8335270" target="_blank" rel="noopener">JMM和底层实现原理</a></li>
+</ol>
+<h3 id="防止指令重排序"><a href="#防止指令重排序" class="headerlink" title="防止指令重排序"></a>防止指令重排序</h3><p><strong>这里解释一下为什么通常只是说volatile可以防止指令重排序</strong>（指的是编译器优化导致的重排序），而不提指令级的重排序和内存层级的重排序。<strong>那是因为volatile是jmm对底层的封装，而指令级的重排序和内存层级的重排序由CPU指令级和缓存一致性协议实现方式决定</strong>，或者说缓存一致性协议不仅有MESI，换到其他协议可能就没有类似问题。</p>
+<h4 id="重排序类型"><a href="#重排序类型" class="headerlink" title="重排序类型"></a>重排序类型</h4><img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E9%87%8D%E6%8E%92%E5%BA%8F%E7%B1%BB%E5%9E%8B.png" class="" title="重排序类型">
+
+<ol>
+<li>编译器优化的重排序。编译器在不改变单线程程序语义的前提下，可以重新安排语句的执行顺序。</li>
+<li>指令级并行的重排序。现代处理器采用了<strong>指令级并行技术（Instruction-LevelParallelism，ILP）</strong>来将多条指令重叠执行。如果不存在数据依赖性，处理器可以改变语句对应机器指令的执行顺序。</li>
+<li>内存系统的重排序。由于处理器使用缓存和读/写缓冲区，这使得加载和存储操作看上去可能是在乱序执行。</li>
+</ol>
+<h4 id="证明指令重排序存在"><a href="#证明指令重排序存在" class="headerlink" title="证明指令重排序存在"></a>证明指令重排序存在</h4><p>在下面的例子中，x, y, a, b初始值为0。线程“one”执行 a = 1, x = b,线程“other”执行 b = 1,  y = a。理论上来说，不可能会发生x = 0, y = 0的情况，除非线程“one”在执行 a = 1 前先执行了 x = b，并且线程“other”在执行 b = 1 前先执行了 y = a。如果发生了 x = 0, y = 0 的情况，就可以证明指令重排序确实存在。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test_Disorder</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> x = <span class="number">0</span>, y = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> a = <span class="number">0</span>, b =<span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span>(;;) &#123;</span><br><span class="line">            i++;</span><br><span class="line">            x = <span class="number">0</span>; y = <span class="number">0</span>;</span><br><span class="line">            a = <span class="number">0</span>; b = <span class="number">0</span>;</span><br><span class="line">            Thread one = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">                a = <span class="number">1</span>;</span><br><span class="line">                x = b;</span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">            Thread other = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">                b = <span class="number">1</span>;</span><br><span class="line">                y = a;</span><br><span class="line">            &#125;);</span><br><span class="line">            one.start();other.start();</span><br><span class="line">            one.join();other.join();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span>(x == <span class="number">0</span> &amp;&amp; y == <span class="number">0</span>) &#123;</span><br><span class="line">                String result = <span class="string">"第"</span> + i + <span class="string">"次 ("</span> + x + <span class="string">","</span> + y + <span class="string">"）"</span>;</span><br><span class="line">                System.err.println(result);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E6%8C%87%E4%BB%A4%E9%87%8D%E6%8E%92%E5%BA%8F.png" class="" title="指令重排序">
+
+<h4 id="as-if-serial"><a href="#as-if-serial" class="headerlink" title="as-if-serial"></a>as-if-serial</h4><p>不管怎么重排序，单线程下的执行结果不能被改变。编译器、runtime和处理器都必须遵守as-if-serial语义。</p>
+<h4 id="Happens-Before"><a href="#Happens-Before" class="headerlink" title="Happens-Before"></a>Happens-Before</h4><p>如果一个操作执行的结果需要对另一个操作可见，那么这两个操作之间必须存在happens-before关系。</p>
+<p><a href="https://www.jianshu.com/p/9464bf340234" target="_blank" rel="noopener">深入理解happens-before规则</a></p>
+<h4 id="总线风暴"><a href="#总线风暴" class="headerlink" title="总线风暴"></a>总线风暴</h4><p>由于volatile的mesi缓存一致性协议需要不断的从主内存嗅探和cas不断循环无效交互导致总线带宽达到峰值。</p>
+<p><strong>解决办法：</strong>部分volatile和cas使用synchronized</p>
+<h4 id="问题：DCL单例需不需要加volatile？"><a href="#问题：DCL单例需不需要加volatile？" class="headerlink" title="问题：DCL单例需不需要加volatile？"></a>问题：DCL单例需不需要加volatile？</h4><p>需要，正确的写法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Singleton</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> Singleton instance;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">Singleton</span><span class="params">()</span></span>&#123;&#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Singleton <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (instance == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (Singleton<span class="class">.<span class="keyword">class</span>) </span>&#123;</span><br><span class="line">                <span class="keyword">if</span> (instance == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    instance = <span class="keyword">new</span> Singleton();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> instance;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>查看创建对象的字节码指令（这里简单的以new Object为例）：</p>
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E8%BF%87%E7%A8%8B.png" class="" title="对象创建过程">
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1 new #2 &lt;java/lang/Object&gt; // 分配对象内存空间</span><br><span class="line"><span class="number">2</span> dup <span class="comment">// 复制操作数堆栈上的最高值，然后将重复的值压入操作数堆栈</span></span><br><span class="line">3 invokespecial #1 &lt;java/lang/Object.&lt;init&gt;&gt; // 初始化对象</span><br><span class="line"><span class="number">4</span> astore_1 <span class="comment">// 设置instance指向刚刚分配的内存地址, 此时instance != null (重点)</span></span><br><span class="line"><span class="number">5</span> <span class="keyword">return</span></span><br></pre></td></tr></table></figure>
+
+<p>因为3、4没有依赖关系，在单线程的情况下，无论3、4哪个先执行，都不会影响最终的结果。但是, CPU和编译器在指令重排时, 并不会关心是否影响多线程的执行结果。在不加volatile关键字时, 如果有多个线程访问getInstance方法, 此时正好发生了指令重排, 那么可能出现如下情况:</p>
+<p>当第一个线程拿到锁并且进入到第二个if方法后, 先分配对象内存空间, 然后再instance指向刚刚分配的内存地址, instance 已经不等于null, 但此时instance还没有初始化完成。如果这个时候又有一个线程来调用getInstance方法, 在第一个if的判断结果就为false, 于是直接返回还没有初始化完成的instance, 那么就很有可能产生异常。</p>
+<h3 id="不能保证原子性"><a href="#不能保证原子性" class="headerlink" title="不能保证原子性"></a>不能保证原子性</h3><p>volatile不能保证变量状态的“原子性操作”。</p>
+<p>值得一提的是，<strong>volatile还能够用来保证对long/double型变量的写操作具有原子性</strong>。在Java语言中，对long类型和double类型以外的任何类型的变量的写操作都是原子操作（在某些32位Java虚拟机上，对long/double类型变量的写操作可能不具备原子性）。</p>
+<h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><h4 id="语法层面"><a href="#语法层面" class="headerlink" title="语法层面"></a>语法层面</h4><p>用volatile关键字修饰变量：<code>valatile boolean flag = false;</code></p>
+<h4 id="字节码层面"><a href="#字节码层面" class="headerlink" title="字节码层面"></a>字节码层面</h4><p>变量多了一个ACC_VOLATILE标签，运行时处理。</p>
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/volatile%E5%AD%97%E8%8A%82%E7%A0%81%E5%AE%9E%E7%8E%B0-1.png" class="" title="volatile字节码实现-1">
+
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/volatile%E5%AD%97%E8%8A%82%E7%A0%81%E5%AE%9E%E7%8E%B0-2.png" class="" title="volatile字节码实现-2">
+
+<h4 id="JVM层面"><a href="#JVM层面" class="headerlink" title="JVM层面"></a>JVM层面</h4><p><strong>bytecodeinterpreter.cpp</strong>中的一个片段</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Now store the result on the stack</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line">TosState tos_type = cache-&gt;flag_state();</span><br><span class="line"><span class="keyword">int</span> field_offset = cache-&gt;f2_as_index();</span><br><span class="line"><span class="keyword">if</span> (cache-&gt;is_volatile()) &#123;</span><br><span class="line">  <span class="keyword">if</span> (support_IRIW_for_not_multiple_copy_atomic_cpu) &#123;</span><br><span class="line">    OrderAccess::fence();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (tos_type == atos) &#123;</span><br><span class="line">    VERIFY_OOP(obj-&gt;obj_field_acquire(field_offset));</span><br><span class="line">    SET_STACK_OBJECT(obj-&gt;obj_field_acquire(field_offset), <span class="number">-1</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (tos_type == itos) &#123;</span><br><span class="line">  <span class="comment">//。。。other code</span></span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到第三行有一个判断<strong>is_volatile()</strong>，就是在查看变量是否加了 volatile 修饰。接着后面就有一个调用<strong>OrderAccess::fence()</strong>。这里的 fence 就是屏障的意思。</p>
+<p>当然不同的系统和硬件会有不同实现的方式，我们以 Linux 系统为例，在<strong>orderAccess_linux_x86.inline.hpp</strong>文件中可以找到 fence()函数。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">OrderAccess::fence</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (os::is_MP()) &#123;</span><br><span class="line">    <span class="comment">// always use locked addl since mfence is sometimes expensive</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> AMD64</span></span><br><span class="line">    <span class="function">__asm__ <span class="title">volatile</span> <span class="params">(<span class="string">"lock; addl $0,0(%%rsp)"</span> : : : <span class="string">"cc"</span>, <span class="string">"memory"</span>)</span></span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    <span class="function">__asm__ <span class="title">volatile</span> <span class="params">(<span class="string">"lock; addl $0,0(%%esp)"</span> : : : <span class="string">"cc"</span>, <span class="string">"memory"</span>)</span></span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，屏障的实现就是依赖于这样一条汇编指令：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">lock</span>; addl</span><br></pre></td></tr></table></figure>
+
+<h4 id="汇编码层面"><a href="#汇编码层面" class="headerlink" title="汇编码层面"></a>汇编码层面</h4><p>汇编指令：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">lock</span>; addl</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Jace Ding WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Jace Ding Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/volatile/" rel="tag"># volatile</a>
+          
+            <a href="/tags/%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C/" rel="tag"># 内存屏障</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/04/02/CentOS7%E8%AE%BE%E7%BD%AE%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/" rel="next" title="CentOS7设置虚拟内存">
+                <i class="fa fa-chevron-left"></i> CentOS7设置虚拟内存
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/05/13/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CAS/" rel="prev" title="深入理解CAS">
+                深入理解CAS <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jace Ding" />
+          <p class="site-author-name" itemprop="name">Jace Ding</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">85</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/jaceding" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:931977674@qq.com" target="_blank" title="E-Mail">
+                  
+                    <i class="fa fa-fw fa-envelope"></i>
+                  
+                    
+                      E-Mail
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#保证线程可见性"><span class="nav-number">1.</span> <span class="nav-text">保证线程可见性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Java内存模型（JMM）"><span class="nav-number">1.1.</span> <span class="nav-text">Java内存模型（JMM）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#缓存一致性和MESI"><span class="nav-number">1.2.</span> <span class="nav-text">缓存一致性和MESI</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#写缓存器、失效队列"><span class="nav-number">1.3.</span> <span class="nav-text">写缓存器、失效队列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存屏障"><span class="nav-number">1.4.</span> <span class="nav-text">内存屏障</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#缓存行对齐"><span class="nav-number">1.5.</span> <span class="nav-text">缓存行对齐</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#伪共享（False-Sharing）"><span class="nav-number">1.5.1.</span> <span class="nav-text">伪共享（False Sharing）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#更多资料"><span class="nav-number">1.6.</span> <span class="nav-text">更多资料</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#防止指令重排序"><span class="nav-number">2.</span> <span class="nav-text">防止指令重排序</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#重排序类型"><span class="nav-number">2.1.</span> <span class="nav-text">重排序类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#证明指令重排序存在"><span class="nav-number">2.2.</span> <span class="nav-text">证明指令重排序存在</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#as-if-serial"><span class="nav-number">2.3.</span> <span class="nav-text">as-if-serial</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Happens-Before"><span class="nav-number">2.4.</span> <span class="nav-text">Happens-Before</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总线风暴"><span class="nav-number">2.5.</span> <span class="nav-text">总线风暴</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#问题：DCL单例需不需要加volatile？"><span class="nav-number">2.6.</span> <span class="nav-text">问题：DCL单例需不需要加volatile？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#不能保证原子性"><span class="nav-number">3.</span> <span class="nav-text">不能保证原子性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现原理"><span class="nav-number">4.</span> <span class="nav-text">实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#语法层面"><span class="nav-number">4.1.</span> <span class="nav-text">语法层面</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#字节码层面"><span class="nav-number">4.2.</span> <span class="nav-text">字节码层面</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#JVM层面"><span class="nav-number">4.3.</span> <span class="nav-text">JVM层面</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#汇编码层面"><span class="nav-number">4.4.</span> <span class="nav-text">汇编码层面</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jace Ding</span>
+</div>
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
