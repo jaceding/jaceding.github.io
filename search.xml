@@ -890,6 +890,9 @@
 <li><p>IDEA中安装JProfiler插件</p>
 </li>
 </ol>
+<h3 id="软换行"><a href="#软换行" class="headerlink" title="软换行"></a>软换行</h3><p><strong>Editor-&gt;General</strong>，添加<code>; *.java</code></p>
+<img src="/2020/05/18/IDEA%E6%90%AD%E5%BB%BA%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83/%E8%BD%AF%E6%8D%A2%E8%A1%8C.png" class="" title="软换行">
+
 <h2 id="插件篇"><a href="#插件篇" class="headerlink" title="插件篇"></a>插件篇</h2><p>推荐直接在IDEA中搜索安装</p>
 <ol>
 <li><a href="https://plugins.jetbrains.com/plugin/10046-alibaba-java-coding-guidelines" target="_blank" rel="noopener">Alibaba Java Coding Guidelines</a> 阿里巴巴Java编码指南</li>
@@ -3375,6 +3378,97 @@
         <tag>ReentrantReadWriteLock</tag>
         <tag>读锁</tag>
         <tag>写锁</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Raft协议</title>
+    <url>/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/</url>
+    <content><![CDATA[<p>Paxos算法不容易实现，Raft算法是对Paxos算法的简化和改进。</p>
+<p>Raft算法将一致性问题分解为两个的子问题，<strong>Leader选举（Leader election）和日志复制（Log Replication）</strong>。</p>
+<p>Raft协议的节点有三种状态：<strong>Leader</strong>、<strong>Follower</strong>、<strong>Candidate</strong>。</p>
+<p>Leader：所有对系统的修改都会先经过leader。每个修改操作都会写一条日志，然后将日志复制到所有Follower节点，多数Follower节点响应时才提交日志，然后通知Follower节点提交日志，这个过程叫做<strong>Log Replication</strong>。</p>
+<p>Follower：所有节点都以follower的状态开始，如果没收到Leader的心跳则会变成Candidate状态。</p>
+<p>Candidate：发起投票，如果得到多数节点的选票则成为Leader，这个过程叫做<strong>Leader election</strong>。等待超时会重新发起投票，竞选失败（收到了Leader的心跳）则会变成Follower状态。</p>
+<p><a href="https://raft.github.io/" target="_blank" rel="noopener">Raft官网</a></p>
+<p><a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">Raft论文</a></p>
+<p><a href="http://thesecretlivesofdata.com/raft/" target="_blank" rel="noopener">Raft动画演示</a></p>
+<a id="more"></a>
+
+<h2 id="Leader-选举"><a href="#Leader-选举" class="headerlink" title="Leader 选举"></a>Leader 选举</h2><h3 id="何时选举"><a href="#何时选举" class="headerlink" title="何时选举"></a>何时选举</h3><p>集群开始时，所有服务器都是follower，当服务器在指定的时间之内没有收到leader或者candidate的消息时会发起选举。这个指定的时间被称为<strong>选举超时（election timeout）</strong>，并且是一个<strong>150~300ms</strong>之间的随机数（<strong>为了避免选举冲突</strong>）。这里，leader的消息是指心跳消息，以<strong>心跳超时（heartbeat timeout）</strong>指定的时间间隔发送，candidate的消息是指投票消息。要求（heartbeat timeout）&lt;&lt; min(election timeout)，避免Follower发起无谓的投票。</p>
+<h3 id="投票过程"><a href="#投票过程" class="headerlink" title="投票过程"></a>投票过程</h3><ol>
+<li><p>Follower在选举超时时间内没有收到来自Leader的请求后会将当前维护的Term值加1</p>
+</li>
+<li><p>将自身状态变成Candidate</p>
+</li>
+<li><p>投票给自己</p>
+</li>
+<li><p>向集群的其他节点发送投票请求（RequestVote）</p>
+</li>
+<li><p>可能会有如下几种可能：</p>
+<ol>
+<li><strong>收到多数节点的选票，节点状态从Candidate变为Leader，并立刻向其他服务器发送心跳消息，之后按照心跳间隔发送心跳消息</strong>。收到投票消息的节点，会立刻重置自己的选举超时时间，它在这个Term下没有投票过，才能为其投票，其他Candidate节点已经在这个Term下已经投票给自己，所以不能为其投票。</li>
+<li><strong>收到了Leader节点的心跳消息并且这个Leader节点的Term不小于自己的Term，状态转为follower，否则丢弃消息</strong>。</li>
+<li><strong>没有节点赢得选举，可能是由于网络超时或者服务器原因没有leader被选举，这种情况比较简单，超时之后重试</strong>。有一种情况被称为split votes，比如一个有三个服务器的集群中所有服务器同时发起选举，那么就不可能有leader被选举出来，此时如果超时之后重试很可能所有服务器又同时发起选举，这样永远不可能有leader被选举出来。raft处理这种情况是采用上文提到过的随机 <strong>election timeout</strong>，随机超时保证了split votes发生的几率很小。</li>
+</ol>
+</li>
+</ol>
+<h3 id="何时同意"><a href="#何时同意" class="headerlink" title="何时同意"></a>何时同意</h3><p>如果发起的投票请求包含的term大于等于当前term，并且日志信息不新于candidate的日志信息（保证选出最新log的server为leader），那么会同意。</p>
+<p><strong>比较日志是否新于Candidate</strong>：比较两个log中最后的entry的index和term，更大term的更加新，如果term一样，那么index更大的更加新。</p>
+<h3 id="Term更新"><a href="#Term更新" class="headerlink" title="Term更新"></a>Term更新</h3><p>所有请求和响应的接收方在接收到更大的term时都必须更新自己的term，这保证了投票最终能够选出一个leader。</p>
+<h2 id="日志复制"><a href="#日志复制" class="headerlink" title="日志复制"></a>日志复制</h2><p>流程如下：</p>
+<ol>
+<li>客户端发起请求（SET 5）给Leader</li>
+<li>Leader接收到请求后，写入到本地日志中，Leader上这条记录的状态是uncommitted</li>
+<li>Leader通过心跳发送AppendEntries消息将日志复制给其他节点</li>
+<li>其他节点收到AppendEntries消息后，会写入日志（状态是uncommitted），如果写入成功则给Leader发出响应</li>
+<li>Leader接收到大部分节点写入成功的响应后，会将Leader上这条记录更新为Committed状态，并且值更新为5。</li>
+<li>Leader通知其他节点提交日志</li>
+<li>其他节点收到提交日志的消息后，将日志状态更新为Committed状态，并且值更新为5。</li>
+<li>此时集群状态完全一致</li>
+</ol>
+<h3 id="AppendEntries消息"><a href="#AppendEntries消息" class="headerlink" title="AppendEntries消息"></a>AppendEntries消息</h3><p><strong>Leader发送AppendEntries消息时，需要携带日志信息Log1和前一个日志Log2的term和index。</strong></p>
+<ol>
+<li>如果在follower节点的日志中找到Log2，那么follower的日志中这条log之后的信息全部丢弃，然后写入Leader发来的Log1。</li>
+<li>如果没有找到Log2，follower将拒绝此消息，那么leader端对应follower的nextIndex会减一然后再对此follower进行AppendEntries操作（既发送Log2和前一个日志Log3的term和index）。如果再次失败那么再进行自减并执行AppendEntries操作。循环直到成功。</li>
+</ol>
+<h3 id="Append-Log并行化"><a href="#Append-Log并行化" class="headerlink" title="Append Log并行化"></a>Append Log并行化</h3><p>日志复制中的步骤2、步骤3可以并行执行，为什么？</p>
+<ol>
+<li>如果Leader没有Crash，那么和顺序的处理结果一致。</li>
+<li>如果Leader Crash了，那么如果大于n/2+1的follower收到了这个消息并Append成功，那么这个Raft Log就一定会被Commit，新选举出来的Leader会响应客户端；否则这个Raft Log就不会被Commit，客户端就会超时/错误/或重试后的结果（看实现方式）。</li>
+</ol>
+<h2 id="网络分区"><a href="#网络分区" class="headerlink" title="网络分区"></a>网络分区</h2><p><strong>在发生网络分区的时候，Raft一样能保持一致性</strong>。</p>
+<p>假设发生了网络分区：节点A和B在一个网络分区，节点C、D和E在另一个网络分区，如下图所示，且节点B和节点C分别是两个网络分区中的Leader节点：</p>
+<img src="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA_1.png" class="" title="网络分区_1">
+
+<p>客户端给节点B发送请求（SET 3），由于网络分区的原因，这个值不能被另一个网络分区中的Leader即节点C拿到，它最多只能被两个节点（节点B和C）感知到，所以它的状态是uncomitted（红色）。</p>
+<img src="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA_2.png" class="" title="网络分区_2">
+
+<p>此时另一个客户端给节点C发送请求（SET 8），由于可以被同一个分区下总计三个节点（节点C、D和E）感知到，3个节点已经符合大多数节点的条件。所以，这个值的状态就是committed。</p>
+<img src="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA_3.png" class="" title="网络分区_3">
+
+<p>然后修复网络分区，节点B能感知到C节点这个Leader的存在，它就会从Leader状态退回到Follower状态，并且节点A和B会回滚之前没有提交的日志（SET 3产生的uncommitted日志）。同时，节点A和B会从新的Leader节点即C节点获取最新的日志（SET 8产生的日志），从而将它们的值更新为8。如此以来，整个集群的5个节点数据完全一致了。</p>
+<img src="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA_4.png" class="" title="网络分区_4">
+
+<h3 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h3><h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><ol>
+<li>相比Paxos更容易理解和工程化实现</li>
+</ol>
+<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><ol>
+<li>Raft有一个很强的假设是主（leader）和备（follower）都按顺序投票，存在并发瓶颈，可参考<a href="https://www.zhihu.com/question/52337912" target="_blank" rel="noopener">OceanBase的一致性协议为什么选择 paxos而不是raft?</a>，不过也可以参考TiDB使用<strong>multi raft</strong>，或者是PolarFS使用的ParallelRaft。<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/33047950" target="_blank" rel="noopener">Elasticell-Multi-Raft实现</a></li>
+</ol>
+</li>
+<li>网络分区会导致脑裂，可能会导致stale read，可以通过ReadIndex Read和Lease Read的方法来解决。<ol>
+<li><a href="https://pingcap.com/blog-cn/lease-read/" target="_blank" rel="noopener">TiDB如何确认 leader 在处理这次 read 的时候一定是 leader</a></li>
+</ol>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>分布式</category>
+      </categories>
+      <tags>
+        <tag>一致性</tag>
+        <tag>Raft</tag>
       </tags>
   </entry>
 </search>
