@@ -94,14 +94,14 @@
 
 
 
-<meta name="description" content="Canal版本：1.1.5">
+<meta name="description" content="Canal版本：1.1.5 官网，配置说明">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Canal环境搭建">
 <meta property="og:url" content="https://jaceding.github.io/2020/10/20/Canal%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/index.html">
 <meta property="og:site_name" content="Jace Ding">
-<meta property="og:description" content="Canal版本：1.1.5">
+<meta property="og:description" content="Canal版本：1.1.5 官网，配置说明">
 <meta property="article:published_time" content="2020-10-20T08:59:17.000Z">
-<meta property="article:modified_time" content="2020-10-20T11:35:48.703Z">
+<meta property="article:modified_time" content="2020-11-05T11:59:04.960Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="Canal">
 <meta name="twitter:card" content="summary">
@@ -416,6 +416,7 @@
 
       
         <p>Canal版本：1.1.5</p>
+<p><a href="https://github.com/alibaba/canal/wiki" target="_blank" rel="noopener">官网</a>，<a href="https://github.com/alibaba/canal/wiki/AdminGuide" target="_blank" rel="noopener">配置说明</a></p>
 <a id="more"></a>
 
 <h2 id="下载、解压"><a href="#下载、解压" class="headerlink" title="下载、解压"></a>下载、解压</h2><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /opt/canal</span><br><span class="line">wget https://github.com/alibaba/canal/releases/download/canal-1.1.5-alpha-2/canal.deployer-1.1.5-SNAPSHOT.tar.gz</span><br><span class="line">tar -zxvf canal.deployer-1.1.5-SNAPSHOT.tar.gz</span><br><span class="line"><span class="comment"># 复制实例配置文件</span></span><br><span class="line"><span class="built_in">cd</span> conf/</span><br><span class="line">cp -r example/ chirp/</span><br><span class="line">cp -r example/ chirpouttest/</span><br><span class="line">rm -rf example/</span><br></pre></td></tr></table></figure>
@@ -427,7 +428,7 @@
 
 <h3 id="chirpouttest-instance-properties"><a href="#chirpouttest-instance-properties" class="headerlink" title="chirpouttest/instance.properties"></a>chirpouttest/instance.properties</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment">################################################</span></span></span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># mysql serverId , v1.0.26+ will autoGen</span></span></span><br><span class="line">canal.instance.mysql.slaveId=179</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">enable</span> gtid use <span class="literal">true</span>/<span class="literal">false</span></span></span><br><span class="line">canal.instance.gtidon=false</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> position info</span></span><br><span class="line">canal.instance.master.address=10.86.52.74:3306</span><br><span class="line">canal.instance.master.journal.name=</span><br><span class="line">canal.instance.master.position=</span><br><span class="line">canal.instance.master.timestamp=</span><br><span class="line">canal.instance.master.gtid=</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> rds oss binlog</span></span><br><span class="line">canal.instance.rds.accesskey=</span><br><span class="line">canal.instance.rds.secretkey=</span><br><span class="line">canal.instance.rds.instanceId=</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> table meta tsdb info</span></span><br><span class="line">canal.instance.tsdb.enable=true</span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.tsdb.url=jdbc:mysql://127.0.0.1:3306/canal_tsdb</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.tsdb.dbUsername=canal</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.tsdb.dbPassword=canal</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.standby.address =</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.standby.journal.name =</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.standby.position =</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.standby.timestamp =</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.standby.gtid=</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> username/password</span></span><br><span class="line">canal.instance.dbUsername=root</span><br><span class="line">canal.instance.dbPassword=ZGp1eW9pZW5zMTU0NjQzyuwn</span><br><span class="line">canal.instance.connectionCharset = UTF-8</span><br><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">enable</span> druid Decrypt database password</span></span><br><span class="line">canal.instance.enableDruid=false</span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.pwdPublicKey=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALK4BUxdDltRRE5/zXpVEVPUgunvscYFtEip3pmLlhrWpacX7y7GCMo2/JM6LeHmiiNdH1FWgGCpUfircSwlWKUCAwEAAQ==</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> table regex</span></span><br><span class="line">canal.instance.filter.regex=chirp.dynamic_tb,chirp.post_tb</span><br><span class="line"><span class="meta">#</span><span class="bash"> table black regex</span></span><br><span class="line">canal.instance.filter.black.regex=mysql\\.slave_.*</span><br><span class="line"><span class="meta">#</span><span class="bash"> table field filter(format: schema1.tableName1:field1/field2,schema2.tableName2:field1/field2)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.filter.field=test1.t_product:id/subject/keywords,test2.t_company:id/name/contact/ch</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> table field black filter(format: schema1.tableName1:field1/field2,schema2.tableName2:field1/field2)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">canal.instance.filter.black.field=test1.t_product:subject/product_image,test2.t_company:id/name/contact/ch</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> mq config</span></span><br><span class="line">canal.mq.topic=chirp_default</span><br><span class="line"><span class="meta">#</span><span class="bash"> dynamic topic route by schema or table regex</span></span><br><span class="line">canal.mq.dynamicTopic=chirp_dynamic:chirp.dynamic_tb,chirp_post:chirp.post_tb</span><br><span class="line"><span class="meta">#</span><span class="bash">canal.mq.partition=0</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">hash</span> partition config</span></span><br><span class="line">canal.mq.partitionsNum=1</span><br><span class="line">canal.mq.partitionHash=.*\\..*:id</span><br><span class="line">canal.mq.dynamicTopicPartitionNum=chirp.dynamic_tb:10,chirp.post_tb:10</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment">################################################</span></span></span><br></pre></td></tr></table></figure>
 
-
+<h2 id="安装Canal-Admin"><a href="#安装Canal-Admin" class="headerlink" title="安装Canal-Admin"></a>安装Canal-Admin</h2>
       
     </div>
     
@@ -495,6 +496,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/10/28/RedissonLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="prev" title="RedissonLock源码分析">
+                RedissonLock源码分析 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -571,7 +576,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">34</span>
+                <span class="site-state-item-count">36</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -593,7 +598,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">93</span>
+                <span class="site-state-item-count">96</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -652,7 +657,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#下载、解压"><span class="nav-number">1.</span> <span class="nav-text">下载、解压</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置文件"><span class="nav-number">2.</span> <span class="nav-text">配置文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#canal-properties"><span class="nav-number">2.1.</span> <span class="nav-text">canal.properties</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chirp-instance-properties"><span class="nav-number">2.2.</span> <span class="nav-text">chirp&#x2F;instance.properties</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chirpouttest-instance-properties"><span class="nav-number">2.3.</span> <span class="nav-text">chirpouttest&#x2F;instance.properties</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#下载、解压"><span class="nav-number">1.</span> <span class="nav-text">下载、解压</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置文件"><span class="nav-number">2.</span> <span class="nav-text">配置文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#canal-properties"><span class="nav-number">2.1.</span> <span class="nav-text">canal.properties</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chirp-instance-properties"><span class="nav-number">2.2.</span> <span class="nav-text">chirp&#x2F;instance.properties</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chirpouttest-instance-properties"><span class="nav-number">2.3.</span> <span class="nav-text">chirpouttest&#x2F;instance.properties</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Canal-Admin"><span class="nav-number">3.</span> <span class="nav-text">安装Canal-Admin</span></a></li></ol></div>
             
 
           </div>
