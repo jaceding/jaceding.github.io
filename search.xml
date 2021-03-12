@@ -3980,4 +3980,18 @@
         <tag>源码分析</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Shell命令-批量杀进程</title>
+    <url>/2020/03/12/Shell%E8%84%9A%E6%9C%AC-%E6%89%B9%E9%87%8F%E6%9D%80%E8%BF%9B%E7%A8%8B/</url>
+    <content><![CDATA[<p>Shell 命令批量杀Java进程</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ps -ef | grep "downloader-jar" | grep -v grep | awk '&#123;print "kill -9 " $2&#125;'|sh</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>环境搭建</category>
+      </categories>
+      <tags>
+        <tag>Shell</tag>
+      </tags>
+  </entry>
 </search>
