@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="一致性,Raft,CAP,WARO,Quorum,Base,FLP,2PC,3PC,Paxos,ZAB," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/myfavicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="CAP 定理一个分布式系统最多只能同时满足一致性（Consistency）、可用性（Availability）和分区容错性（Partition tolerance）这三项中的两项。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一致性协议">
+<meta property="og:url" content="https://jaceding.github.io/2020/09/18/%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE/index.html">
+<meta property="og:site_name" content="Jace Ding">
+<meta property="og:description" content="CAP 定理一个分布式系统最多只能同时满足一致性（Consistency）、可用性（Availability）和分区容错性（Partition tolerance）这三项中的两项。">
+<meta property="og:image" content="https://jaceding.github.io/2020/09/18/%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE/CAP.jpg">
+<meta property="article:published_time" content="2020-09-18T11:44:02.000Z">
+<meta property="article:modified_time" content="2021-03-18T11:53:55.361Z">
+<meta property="article:author" content="Jace Ding">
+<meta property="article:tag" content="一致性">
+<meta property="article:tag" content="Raft">
+<meta property="article:tag" content="CAP">
+<meta property="article:tag" content="WARO">
+<meta property="article:tag" content="Quorum">
+<meta property="article:tag" content="Base">
+<meta property="article:tag" content="FLP">
+<meta property="article:tag" content="2PC">
+<meta property="article:tag" content="3PC">
+<meta property="article:tag" content="Paxos">
+<meta property="article:tag" content="ZAB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jaceding.github.io/2020/09/18/%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE/CAP.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://jaceding.github.io/2020/09/18/一致性协议/"/>
+
+
+
+
+
+  <title>一致性协议 | Jace Ding</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?a5b3b0af00f4af4a78fb52c6720825d5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Jace Ding</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/09/18/%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">一致性协议</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-09-18T19:44:02+08:00">
+                2020-09-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index">
+                    <span itemprop="name">Java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="CAP-定理"><a href="#CAP-定理" class="headerlink" title="CAP 定理"></a>CAP 定理</h2><p>一个分布式系统最多只能同时满足<strong>一致性（Consistency）</strong>、<strong>可用性（Availability）</strong>和<strong>分区容错性（Partition tolerance）</strong>这三项中的两项。</p>
+<a id="more"></a>
+
+<img src="/2020/09/18/%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE/CAP.jpg" class="" title="CAP">
+
+<h3 id="一致性"><a href="#一致性" class="headerlink" title="一致性"></a>一致性</h3><p>一致性是指多个数据副本之间能够保持一致的特性（强一致性）。</p>
+<p>从客户端角度，多进程并发访问时，更新过的数据在不同进程如何获取的不同策略，分为不同的一致性。</p>
+<ol>
+<li><strong>强一致性：</strong>要求更新过的数据能被后续的访问都能看到，则是强一致性。</li>
+<li><strong>弱一致性：</strong>能容忍后续的部分或者全部访问不到，则是弱一致性。</li>
+<li><strong>最终一致性</strong>：经过一段时间后要求能访问到更新后的数据，则是最终一致性。</li>
+</ol>
+<h3 id="可用性"><a href="#可用性" class="headerlink" title="可用性"></a>可用性</h3><p>可用性是指系统提供的服务一直处于可用状态，每次请求都能获取到非错的响应。</p>
+<h3 id="分区容错性"><a href="#分区容错性" class="headerlink" title="分区容错性"></a>分区容错性</h3><p>分区容错性是指分布式系统在遇到某节点或网络分区故障的时候，仍然能够对外提供满足一致性或可用性的服务。</p>
+<h3 id="论证"><a href="#论证" class="headerlink" title="论证"></a>论证</h3><p>假设存在有一个分布式系统：有两个节点N1、N2，N1 和 N2 分别连接数据库D1 和 D2。</p>
+<p>如果客户端向节点 N1 请求更新数据，N1 更新完数据后需要向 N2 进行同步操作，如果此时正好发生网络分区，也就是说 N1 和 N2 网络不通。在满足分区容错性的前提下，是否能满足一致性和可用性呢？这里有两种选择：</p>
+<ol>
+<li>牺牲数据一致性，保证系统可用性，响应更新成功给客户端。</li>
+<li>牺牲系统可用性，保证数据一致性，阻塞等待网络连通或返回错误信息给客户端。、</li>
+</ol>
+<p>在分布式系统中，通常分区容错性必须得保证，只能在一致性和可用性做出权衡。</p>
+<h3 id="权衡"><a href="#权衡" class="headerlink" title="权衡"></a>权衡</h3><h4 id="CA"><a href="#CA" class="headerlink" title="CA"></a>CA</h4><p>如果不要求分区容错性，则强一致性和可用性是可以保证的。</p>
+<p>但其实分区不是你想不想的问题，而是始终会存在，因此CA的系统更多的是允许分区后各子系统依然保持CA。</p>
+<h4 id="CP"><a href="#CP" class="headerlink" title="CP"></a>CP</h4><p>如果不要求可用性，相当于每个请求都需要在Server之间强一致，而P（分区）会导致同步时间无限延长，如此CP也是可以保证的。很多传统的数据库分布式事务都属于这种模式。</p>
+<h4 id="AP"><a href="#AP" class="headerlink" title="AP"></a>AP</h4><p>如果要求高可用并允许分区，则需放弃一致性。一旦分区发生，节点之间可能会失去联系，为了高可用，每个节点只能用本地数据提供服务，而这样会导致全局数据的不一致性。</p>
+<h3 id="WARO-机制"><a href="#WARO-机制" class="headerlink" title="WARO 机制"></a>WARO 机制</h3><p>WARO（Write All Read one）是一种简单的副本控制协议，当 Client 请求向某副本写数据时（更新数据），只有当所有的副本都更新成功之后，这次写操作才算成功，否则视为失败。</p>
+<p><strong>假设有 N 个副本，N-1 个都宕机了，剩下的那个副本仍能提供读服务；但是只要有一个副本宕机了，写服务就不会成功。</strong></p>
+<p>WARO 机制牺牲了更新服务的可用性，最大程度地增强了读服务的可用性。</p>
+<h3 id="Quorum-机制"><a href="#Quorum-机制" class="headerlink" title="Quorum 机制"></a>Quorum 机制</h3><p>Quorum机制是 “抽屉原理” 的一个应用。</p>
+<p>假设有 N 个副本。为了能够执行写请求，必须要确保写操作被 W（W 小于 N）个副本确认。所以你需要将写请求发送到这 W 个副本。如果要执行读请求，那么至少需要从 R 个副本得到所读取的信息。这里的 W 对应的数字称为 Write Quorum，R 对应的数字称为 Read Quorum。这是一个典型的 Quorum 配置。</p>
+<p>这里的关键点在于，W、R、N之间的关联。Quorum 系统要求，任意你要发送写请求的 W 个服务器，必须与任意接收读请求的 R 个服务器有重叠。这意味着，<strong>W+R &gt; N</strong> ，这样任意 W 个服务器至少与任意 R个服务器有一个重合。</p>
+<h3 id="N个9"><a href="#N个9" class="headerlink" title="N个9"></a>N个9</h3><p>系统的可靠性中有个衡量标准：N个9，表示一年中，系统可以正常使用的时间与总时间之比。</p>
+<ul>
+<li><strong>3个9</strong>：( 1 - 99.9% ) * 365 * 24 = 8.76小时，表示系统一年内最多不可用时间为 8.76 小时。</li>
+<li><strong>4个9</strong>：( 1 - 99.99% ) * 365 * 24 = 0.876小时 = 52.6分钟，表示系统一年内最多不可用时间为 52.6 分钟。</li>
+<li><strong>5个9</strong>：( 1 - 99.999% ) * 365 * 24 * 60 = 5.26分钟，表示系统一年内最多不可用时间为 5.26 分钟。</li>
+</ul>
+<h2 id="Base-理论"><a href="#Base-理论" class="headerlink" title="Base 理论"></a>Base 理论</h2><p>BASE 理论是<strong>基本可用（Basically Available），软状态（Soft State）和最终一致性（Eventually Consistent）</strong>三个短语的缩写。</p>
+<p>BASE 理论是对 CAP 中 AP 的一个扩展，其核心思想是：即使无法做到强一致性，但每个应用都可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性。</p>
+<h3 id="基本可用"><a href="#基本可用" class="headerlink" title="基本可用"></a>基本可用</h3><p>基本可用是指分布式系统在出现不可预知故障的时候，允许损失部分可用性。例如：</p>
+<ul>
+<li>响应时间上的损失：正常情况下的搜索引擎0.5秒即返回给用户结果，但由于出现故障，查询结果的响应时间增加到 1 ~ 2 秒。</li>
+<li>功能上的损失：在一个电商网站上，正常情况下，用户可以顺利完成每一笔订单。但是到了大促期间，为了保护购物系统的稳定性，部分消费者可能会被引导到一个降级页面。</li>
+</ul>
+<h3 id="软状态"><a href="#软状态" class="headerlink" title="软状态"></a>软状态</h3><p>软状态是指允许系统中的数据存在中间状态，并认为该状态不影响系统的整体可用性，即允许系统在多个不同节点的数据副本存在数据延时。</p>
+<h3 id="最终一致性"><a href="#最终一致性" class="headerlink" title="最终一致性"></a>最终一致性</h3><p>最终一致性强调的是系统中所有的数据副本，在经过一段时间的同步后，最终能够达成一致的状态。因此，最终一致性的本质是需要系统保证最终数据能够达成一致，而不需要实时保证数据的强一致性。</p>
+<p>最终一致性是一种特殊的弱一致性，经过一段时间后达成一致，这个时间期限取决于网络延时、系统负载、数据复制方案设计等等因素。</p>
+<p>在实际工程实践中，最终一致性大致分为5种：</p>
+<ol>
+<li><p>因果一致性（Causal consistency）：</p>
+<p>如果节点 A 在更新完某个数据后通知了节点 B，那么节点 B 之后对该数据的访问和修改都是基于 A 更新后的值，即不能发生丢失更新情况。而与节点 A 无因果关系的节点 C 的数据访问则没有这样的限制。</p>
+</li>
+<li><p>读己之所写（Read your writes）</p>
+<p>节点 A 更新一个数据后，它自身总是能访问到自身更新过的最新值，而不是旧值。这也算一种因果一致性。</p>
+</li>
+<li><p>会话一致性（Session consistency）</p>
+<p>将对系统数据的访问过程框定在了一个会话当中：系统能保证在同一个有效的会话中实现 “读己之所写” 的一致性，也就是说，执行更新操作之后，客户端能够在同一个会话中始终读取到该数据项的最新值。</p>
+</li>
+<li><p>单调读一致性（Monotonic read consistency）</p>
+<p>如果一个节点从系统中读取出一个数据项的某个值后，那么系统对于该节点后续的任何数据访问都不应该返回更旧的值。</p>
+</li>
+<li><p>单调写一致性（Monotonic write consistency）</p>
+<p>一个系统要能够保证来自同一个节点的写操作被顺序的执行。</p>
+</li>
+</ol>
+<p>在实际的实践中，这5种系统往往会结合使用，以构建一个具有最终一致性的分布式系统。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>总体来说 BASE 理论面向的是大型高可用、可扩展的分布式系统。不同于传统 ACID 的强一致性模型，BASE 理论提出通过牺牲强一致性来获得可用性，并允许数据段时间内的不一致，但是最终达到一致状态。同时，在实际分布式场景中，不同业务对数据的一致性要求不一样。因此在设计中，ACID 和 BASE 理论往往又会结合使用。</p>
+<h2 id="FLP"><a href="#FLP" class="headerlink" title="FLP"></a>FLP</h2><p><strong>FLP 不可能定理</strong>是分布式系统领域中最重要的定理之一，它给出了一个非常重要的结论：</p>
+<p><strong>在网络可靠并且存在节点失效的异步模型系统中，不存在一个可以解决一致性问题的确定性算法</strong>。</p>
+<p>这个定理告诉我们不要浪费时间去为异步分布式系统设计在任意场景上都能够实现共识的算法，异步系统完全没有办法保证能在有限时间内达成一致。</p>
+<h2 id="2PC-和-3PC"><a href="#2PC-和-3PC" class="headerlink" title="2PC 和 3PC"></a>2PC 和 3PC</h2><h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>在分布式系统中，每个节点虽然知道自己进行事务操作的结果，却无法获取其他节点的操作结果。因此，当一个事务操作需要跨域多个分布式节点的时候，为了保持事务处理的 ACID 特性，引入了一个称为 “协调者” 的组件来调度所有分布式节点的执行逻辑（比如：半数节点执行成功则提交），这些被调度的分布式节点被称为 “参与者”。</p>
+<p>协调者负责调度参与者的行为，并最终决定这些参与者是否要把事务进行提交。基于这个思想，衍生出了二阶段提交协议（2 Phase Commitment Protocol，2PC）和三阶段提交协议（3 Phase Commitment Protocol，3PC）。</p>
+<h3 id="2PC"><a href="#2PC" class="headerlink" title="2PC"></a>2PC</h3><p>为了使分布式系统的所有节点在进行事务过程中能够保持原子性和一致性而设计的算法。通常，2PC也被认为是一种一致性协议，用来保证分布式系统中的数据一致性。</p>
+<p>大概思路：每个参与者将操作成败通知协调者，再由协调者根据所有参与者的反馈情报，决定各参与者是否要提交操作还是中止操作。</p>
+<p>二阶段提交的两个阶段：</p>
+<ul>
+<li>第一阶段：<strong>提交事务请求（也叫投票阶段，各参与者投票表明是否要继续执行接下来的事务提交操作）</strong></li>
+<li>第二阶段：<strong>执行事务提交（也叫提交阶段，根据参与者的反馈情况决定最终是否可以进行事务提交操作）</strong></li>
+</ul>
+<h4 id="投票阶段"><a href="#投票阶段" class="headerlink" title="投票阶段"></a>投票阶段</h4><p>投票阶段流程如下：</p>
+<ol>
+<li><p><strong>事务询问</strong></p>
+<p>协调者向所有的参与者发送事务内容，询问是否可以执行事务提交操作，并开始等待各参与者的响应。</p>
+</li>
+<li><p><strong>执行事务</strong></p>
+<p>各参与者节点执行事务操作，并将 undo 和 redo 信息记入事务日志中。</p>
+</li>
+<li><p><strong>各参与者向协调者反馈事务询问的响应</strong></p>
+<p>如果参与者成功执行了事务，则反馈给协调者 Yes 响应，表示事务可以执行，如果参与者没有执行成功，则反馈 No 响应，表示事务不可以执行。</p>
+</li>
+</ol>
+<h4 id="提交阶段"><a href="#提交阶段" class="headerlink" title="提交阶段"></a>提交阶段</h4><p>根据参与者的反馈情况决定最终是否可以进行事务提交操作，有两种可能：</p>
+<h5 id="执行事务提交"><a href="#执行事务提交" class="headerlink" title="执行事务提交"></a>执行事务提交</h5><p>如果所有参与者的反馈都是Yes，那么就会执行事务提交。执行事务提交流程如下：</p>
+<ol>
+<li><p><strong>发送提交请求</strong></p>
+<p>协调者向所有参与者发送 commit 请求。</p>
+</li>
+<li><p><strong>事务提交</strong></p>
+<p>参与者接收到 commit 请求后，会正式执行事务提交操作，并在完成提交后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务提交结果</strong></p>
+<p>参与者完成提交事务之后，向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>完成事务</strong></p>
+<p>协调者接收到所有参与者反馈的 Ack 消息后，完成事务。</p>
+</li>
+</ol>
+<h5 id="中断事务"><a href="#中断事务" class="headerlink" title="中断事务"></a>中断事务</h5><p>如果任何一个参与者的反馈是No，或者在等待超时之后，协调者没有收到所有参与者的响应，那么就会中断事务。中断事务流程如下：</p>
+<ol>
+<li><p><strong>发送回滚请求</strong></p>
+<p>协调者向所有参与者发送 Rollback 请求。</p>
+</li>
+<li><p><strong>事务回滚</strong></p>
+<p>参与者接收到 Rollback 请求后，会利用其在一阶段中记录的 undo 信息来执行事务回滚操作，并在完成回滚后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务回滚结果</strong></p>
+<p>参与者完成事务回滚之后，向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>完成中断事务</strong></p>
+<p>协调者接收到所有参与者反馈的 Ack 消息后，完成中断事务。</p>
+</li>
+</ol>
+<h4 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h4><p>优点：</p>
+<ol>
+<li><strong>原理简单，实现方便。</strong></li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li><p><strong>同步阻塞</strong></p>
+<p>在二阶段提交的过程中，所有参与该事务操作的逻辑都处于阻塞状态，也就是说，各个参与者在等待其他参与者响应的过程中，将无法进行其他操作。这种同步阻塞极大的限制了分布式系统的性能。</p>
+</li>
+<li><p><strong>单点问题</strong></p>
+<p>一旦协调者出现问题，整个二阶段提交流程将无法运转，更为严重的是，参与者将会一直处在锁定事务资源的状态中，而无法继续完成事务操作。所有参与者必须等待协调者重新上线后才能工作。</p>
+</li>
+<li><p><strong>数据不一致</strong></p>
+<p>在提交阶段中，当协调者向参与者发送 commit 请求之后，发生了局部网络异常或者在发送 commit 请求过程中协调者发生了故障，这会导致只有部分参与者接受到了commit 请求。这样整个分布式系统便出现了数据不一致性的现象。</p>
+</li>
+<li><p><strong>容错性不好</strong></p>
+<p>如果在二阶段提交的提交阶段，参与者出现故障，导致协调者始终无法获取到所有参与者的确认信息，这时协调者只能依靠其自身的超时机制，判断是否需要中断事务。显然，这种策略过于保守。换句话说，二阶段提交协议没有设计较为完善的容错机制，任意一个节点是失败都会导致整个事务的失败。</p>
+</li>
+</ol>
+<h3 id="3PC"><a href="#3PC" class="headerlink" title="3PC"></a>3PC</h3><p>二阶段提交存在诸多缺点，因此研究者在二阶段提交协议的基础上进行了改进，提出了三阶段提交协议。</p>
+<p>与两阶段提交不同的是，三阶段提交有两个改动点：</p>
+<ol>
+<li>引入超时机制（2PC只有协调者有超时机制）</li>
+<li>将 2PC 的投票阶段一分为二，这样 3PC 就有 CanCommit、PreCommit、DoCommit 阶段</li>
+</ol>
+<p>引入 CanCommit 阶段，主要是进一步降低阻塞范围，因为在执行事务后，就会占用事务资源。2PC 没有CanCommit 阶段，那么就一定会占用事务资源（占用事务资源意味着可能导致阻塞）。换句话说，如果在占用事务资源之前，就能先判断事务是否执行成功，那么这样可以避免一些不必要的阻塞，这个和 Java 中的双重锁定有着异曲同工之妙。</p>
+<h4 id="CanCommit"><a href="#CanCommit" class="headerlink" title="CanCommit"></a>CanCommit</h4><p>CanCommit 流程如下：</p>
+<ol>
+<li><p><strong>事务询问</strong></p>
+<p>协调者向所有参与者发送一个包含事务内容的 CanCommit 请求，询问是否可以执行事务提交操作，并开始等待个参与者响应。</p>
+</li>
+<li><p><strong>各参与者向协调者反馈事务询问的响应</strong></p>
+<p>参与者在接收到协调者的 CanCommit 请求后，如果认为自身能够顺利执行事务，则响应 Yes 并进入预备状态，否则响应 No。</p>
+</li>
+</ol>
+<h4 id="PreCommit"><a href="#PreCommit" class="headerlink" title="PreCommit"></a>PreCommit</h4><p>根据参与者的反馈情况决定最终是否可以进行 PreCommit 操作，有两种可能：</p>
+<h5 id="执行事务预提交"><a href="#执行事务预提交" class="headerlink" title="执行事务预提交"></a>执行事务预提交</h5><p>如果阶段一所有参与者的反馈都是 Yes，那么就会执行事务预提交。执行事务预提交流程如下：</p>
+<ol>
+<li><p><strong>发送预提交请求</strong></p>
+<p>协调者向所有参与者发送 PreCommit 请求，并进入 Prepared 阶段。</p>
+</li>
+<li><p><strong>事务预提交</strong></p>
+<p>各参与者接收到 PreCommit 请求后，执行事务操作，并将 undo 和 redo 信息记入事务日志中。</p>
+</li>
+<li><p><strong>各参与者向协调者反馈事务执行的响应</strong></p>
+<p>如果参与者成功执行了事务操作，那么就会反馈给协调者 Ack 响应，同时等待最终的指令：提交（commit）或中止（abort）。</p>
+</li>
+</ol>
+<h5 id="中断事务-1"><a href="#中断事务-1" class="headerlink" title="中断事务"></a>中断事务</h5><p>如果阶段一任何一个参与者的反馈是 No，或者在等待超时之后，协调者没有收到所有参与者的响应，就会执行中断事务。中断事务流程如下：</p>
+<ol>
+<li><p><strong>发送中断请求</strong></p>
+<p>协调者向所有参与者发送 Abort 请求。</p>
+</li>
+<li><p><strong>中断事务</strong></p>
+<p>参与者收到协调者的 Abort 请求，或者在等待超时之后，参与者没有收到所有协调者的响应，就会执行中断操作。 </p>
+</li>
+</ol>
+<h4 id="DoCommit"><a href="#DoCommit" class="headerlink" title="DoCommit"></a>DoCommit</h4><h5 id="执行提交"><a href="#执行提交" class="headerlink" title="执行提交"></a>执行提交</h5><p>如果协调者处于正常状态，并且它接收到了所有参与者的 Ack 响应，那么就会执行提交。执行提交流程如下：</p>
+<ol>
+<li><p><strong>发送提交请求</strong></p>
+<p>协调者会从 “预提交” 状态转换为 “提交” 状态，并向所有参与者发送 doCommit 请求。</p>
+</li>
+<li><p><strong>事务提交</strong></p>
+<p>参与者接收到 doCommit 请求后，会正式执行事务提交操作，并在完成提交后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务提交结果</strong></p>
+<p>参与者完成事务提交之后，会向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>完成事务</strong></p>
+<p>协调者在收到所有参与者的 Ack 后，完成事务。</p>
+</li>
+</ol>
+<h5 id="中断事务-2"><a href="#中断事务-2" class="headerlink" title="中断事务"></a>中断事务</h5><p>如果协调者处于正常状态，有任意一个参与者向协调者反馈了 No 响应，或者在等待超时之后，参与者没有收到所有协调者的响应，就会中断事务。中断事务流程如下：</p>
+<ol>
+<li><p><strong>发送中断请求</strong></p>
+<p>协调者向所有参与者发送 Abort 请求。</p>
+</li>
+<li><p><strong>事务回滚</strong></p>
+<p>参与者在收到协调者的 Abort 请求后，会利用其阶段二中记录的 undo 信息来执行事务回滚操作，并在完成回滚后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务回滚结果</strong></p>
+<p>参与者在完成回滚后，向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>中断事务</strong></p>
+<p>协调者在收到所有参与者反馈的 Ack 消息后，中断事务。</p>
+</li>
+</ol>
+<h4 id="协议补充"><a href="#协议补充" class="headerlink" title="协议补充"></a>协议补充</h4><p>一旦进入阶段三，参与者等待协调者最终的指令，协调者发生了故障或者发生了网络故障，参与者在等待超时后最终会提交事务。</p>
+<h4 id="优缺点-1"><a href="#优缺点-1" class="headerlink" title="优缺点"></a>优缺点</h4><p>优点：</p>
+<ol>
+<li><p><strong>降低了参与者的阻塞范围，并且能够在单点故障后继续达成一致。</strong></p>
+<p>进入阶段三后，即使没有收到协调者最终的指令，参与者最终也会提交事务。</p>
+</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li><p><strong>可能会数据不一致</strong></p>
+<p>参与者在接收到PreCommit消息后，如果出现网络分区， 某个参与者无法和协调者进行通信，这个参与者最终会进行事务的提交（其他参与者可能会回滚）。</p>
+</li>
+</ol>
+<h2 id="Paxos"><a href="#Paxos" class="headerlink" title="Paxos"></a>Paxos</h2><p>Paxos 算法是 Leslie Lamport 1990年提出的一种基于消息传递且具有高度容错特性的<strong>共识</strong>算法。</p>
+<p>需要注意的是，<strong>一致性</strong>和<strong>共识</strong>并不是一个概念，一致性往往指分布式系统中多个副本对外呈现的数据的状态，共识则描述了分布式系统中多个节点之间，彼此对某个提案达成一致结果的过程。因此，一致性描述的是结果，共识则是一种手段。从某种程度上来说，共识算法可以看作是实现强一致性的一种方法。</p>
+<h3 id="算法角色"><a href="#算法角色" class="headerlink" title="算法角色"></a>算法角色</h3><p>Paxos 有三种角色：<strong>提议者（Proposer），决策者（Acceptor），和学习者（Learner）</strong>：</p>
+<ul>
+<li><strong>Proposer</strong>：<ul>
+<li>提案发起者</li>
+<li>处理客户端的请求</li>
+</ul>
+</li>
+<li><strong>Acceptor</strong>：<ul>
+<li>参与决策，回应 Proposer 的提案</li>
+<li>对 Accept 的提案，进程状态进行持久化</li>
+</ul>
+</li>
+<li><strong>Learner</strong>：<ul>
+<li>不参与决策，从 Proposer / Acceptor 学习最新达成一致的提案（Value）。</li>
+</ul>
+</li>
+</ul>
+<p><strong>在具体的实现中，一个进程可能不止充当一种角色。</strong></p>
+<h3 id="安全性和活性"><a href="#安全性和活性" class="headerlink" title="安全性和活性"></a>安全性和活性</h3><p>一个分布式算法有两个最重要的属性：<strong>安全性（Safety）</strong>和<strong>活性（Liveness）</strong>。</p>
+<ul>
+<li><strong>安全性</strong><ol>
+<li>只有被提出的提案才能被选定</li>
+<li>只能一个值被选定</li>
+<li>如果某个进程认为某个提案被选定了，那么这个提案必须是真的被选定的那个</li>
+</ol>
+</li>
+<li><strong>活性</strong><ol>
+<li>最终有一个提案会被选定</li>
+</ol>
+</li>
+</ul>
+<h3 id="Basic-Paxos"><a href="#Basic-Paxos" class="headerlink" title="Basic Paxos"></a>Basic Paxos</h3><h4 id="Proposer-生成提案"><a href="#Proposer-生成提案" class="headerlink" title="Proposer 生成提案"></a>Proposer 生成提案</h4><ul>
+<li>Proposer 选择一个新的提案编号 N，然后向某个 Acceptor 集合（该集合数量必须大于半数）的成员发送请求，要求该集合中的 Acceptor 做出如下回应：<ul>
+<li>保证不再批准任何编号小于 N 的提案。</li>
+<li>如果 Acceptor 已经批准过任何提案，那么其就向 Proposer 反馈当前该 Acceptor 批准过的编号小于 N 但为最大编号的那个提案。</li>
+</ul>
+</li>
+<li>如果 Proposer 收到了半数以上的 Acceptor 的响应结果，那么它就可以产生编号为 N，Value 为 W 的提案，这里的 W 是 Prepare 请求中所有响应中编号最大的提案的值。或者如果半数以上的 Acceptor 没有批准过任何提案，即 Prepare 请求中不包含任何提案，那么此时 W 值就可以由 Proposer 任意选择。</li>
+</ul>
+<h4 id="Acceptor-批准提案"><a href="#Acceptor-批准提案" class="headerlink" title="Acceptor 批准提案"></a>Acceptor 批准提案</h4><p>Acceptor可能会收到来自Propose的两种请求：Prepare 请求和 Accept 请求，对这两种请求做出响应的条件如下：</p>
+<ul>
+<li>Prepare 请求：Acceptor 可以在任何时候响应一个 Prepare 请求（前提是这个 Prepare 中的提案编号大于他批准过的所有提案编号）。</li>
+<li>Accept请求： Acceptor 只要尚未响应过任何编号大于M的 Prepare 请求，那么它就可以响应这个编号为 M 的Accept 请求。</li>
+</ul>
+<h4 id="算法流程"><a href="#算法流程" class="headerlink" title="算法流程"></a>算法流程</h4><p>Basic Paxos 算法伪代码如下：</p>
+
+
+<p>Basic Paxos 将决议分为两个阶段：<strong>Prepare 阶段</strong>、<strong>Accept 阶段</strong>：</p>
+<h5 id="Prepare-阶段"><a href="#Prepare-阶段" class="headerlink" title="Prepare 阶段"></a>Prepare 阶段</h5><ol>
+<li>Proposer 生成一个<strong>全局唯一且递增</strong>的提案编号M，然后向所有 Acceptor 发送编号为M的 <strong>Prepare 请求</strong>。（这里只携带提案编号即可）</li>
+<li>如果一个 Acceptor 收到提案编号为 M 的 Prepare 请求，且 M 大于已批准过的最大编号的提案，那么它就会将已批准过的最大编号的提案 [M1，V1] 作为响应反馈给 Proposer，同时承诺不会再批准任何编号小于M的提案。</li>
+</ol>
+<h5 id="Accept-阶段"><a href="#Accept-阶段" class="headerlink" title="Accept 阶段"></a>Accept 阶段</h5><ol>
+<li>如果 Proposer 收到半数以上 Acceptor 对其发出的 Prepare 请求的响应，那么它会发送一个针对 [M，V] 提案的 <strong>Accept 请求</strong>给 Acceptor。（这个提案的值 V 就是收到的响应中编号最大的提案的值V1，如果响应中不包含任何提案，那么 V 就是任意值）</li>
+<li>如果一个 Acceptor 收到针对 [M，V] 提案的Accept请求，只要该 Acceptor 尚未对编号大于 M 的 Prepare 请求做出响应，它就可以接收并持久化这个提案 [M，V]。</li>
+</ol>
+<h4 id="算法优化"><a href="#算法优化" class="headerlink" title="算法优化"></a>算法优化</h4><p><strong>对于不会批准的请求，直接忽略，减少RPC次数</strong>。</p>
+<h4 id="提案的获取"><a href="#提案的获取" class="headerlink" title="提案的获取"></a>提案的获取</h4><ul>
+<li>方案一：一旦一个 Acceptor 批准了一个提案，就将该提案发送给所有的 Leaner。<ul>
+<li>优点：实现简单</li>
+<li>缺点：通讯次数太多。这样的做法虽然可以让 Learner 尽快获取被选定的提案，但是却需要让每个Acceptor跟所有的Learner逐个进行通信，通信的次数至少为二者数量的乘积。</li>
+</ul>
+</li>
+<li>方案二：让所有的 Acceptor 将它们对提案的批准情况，统一发送给一个特定的Learner（称为“主Learner”），在不考虑拜占庭将军问题的前提下，假定Learner之间可以通过消息通讯来感知提案的选定情况。所以，当主Learner被通知一个提案已经被选定时，它会负责通知其他Learner。<ul>
+<li>优点：通讯次数减少（通常为Accepter和Learner数量的总和）</li>
+<li>缺点：主Learner存在单点问题，并且延迟更高。</li>
+</ul>
+</li>
+<li>方案三：因为方案二主 Learner 存在单点问题，所以让 Acceptor 发送给一个特定的 Learner 集合，该集合中的每个 Learner 都可以在一个提案被选定后通知其他 Learner。集合中 Learner 数量越多，就越可靠，但通讯也更复杂。<ul>
+<li>优点：通讯次数相对方案一少，相对方案二也更可靠。</li>
+<li>缺点：通讯次数相对方案二多了，实现复杂。</li>
+</ul>
+</li>
+</ul>
+<h4 id="活锁"><a href="#活锁" class="headerlink" title="活锁"></a>活锁</h4><p>存在一种极端情况，有两个 Proposer 依次提出一系列编号递增的提案，但是最终都无法被选定，陷入死循环。</p>
+<h3 id="Multi-Paxos"><a href="#Multi-Paxos" class="headerlink" title="Multi-Paxos"></a>Multi-Paxos</h3><p>Basic Paxos 只能对一个值形成决议，决议的形成至少需要两次网络来回，在高并发情况下可能需要更多的网络来回，极端情况下甚至可能形成活锁。如果想连续确定多个值，Basic Paxos搞不定了。因此Basic Paxos几乎只是用来做理论研究，并不直接应用在实际工程中。</p>
+<p>Multi-Paxos 基于 Basic Paxos 做了两点改进：</p>
+<ol>
+<li>针对每一个要确定的值，运行一次 Basic Paxos 算法实例（Instance），形成决议。每一个 Paxos 实例使用唯一的Instance ID标识。</li>
+<li>在所有 Proposers 中选举一个 Leader，由 Leader 唯一地提交 Proposal 给 Acceptors 进行表决。这样没有Proposer 竞争，解决了活锁问题。在系统中仅有一个 Leader 进行 Value 提交的情况下，Prepare 阶段就可以跳过，从而将两阶段变为一阶段，提高效率。</li>
+</ol>
+<p>Multi-Paxos 首先需要选举Leader，Leader的确定也是一次决议的形成，所以可执行一次Basic Paxos实例来选举出一个Leader。选出Leader之后只能由Leader提交Proposal，在Leader宕机之后服务临时不可用，需要重新选举Leader继续服务。在系统中仅有一个Leader进行Proposal提交的情况下，Prepare阶段可以跳过。</p>
+<p>Multi-Paxos通过改变Prepare阶段的作用范围至后面Leader提交的所有实例，从而使得Leader的连续提交只需要执行一次Prepare阶段，后续只需要执行Accept阶段，将两阶段变为一阶段，提高了效率。为了区分连续提交的多个实例，每个实例使用一个Instance ID标识，Instance ID由Leader本地递增生成即可。</p>
+<p>Multi-Paxos允许有多个自认为是Leader的节点并发提交Proposal而不影响其安全性，这样的场景即退化为Basic Paxos。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>二阶段提交主要解决了分布式事务的原子性问题，但是存在一些难以解决的例如同步阻塞，单点问题导致无期限等待，数据不一致等问题。</li>
+<li>三阶段提交在二阶段提交的基础上，引入CanCommit，并给参与者加上超时机制，减小阻塞的范围，避免无期限等待，但仍然没解决数据不一致问题。</li>
+<li>Paxos 算法引入“过半”理念，并支持分布式节点角色之间的转换，避免了分布式节点的单点问题，既解决了无期限等待，也解决了“脑裂”问题。</li>
+</ul>
+<ol>
+<li>如果 Proposer 收到半数以上 Acceptor 对其发出的 Accept 请求的响应，标志着本次 Accept 成功，决议形成。</li>
+<li>将形成的决议发送给所有 Learner。 </li>
+</ol>
+<h3 id="相关资料"><a href="#相关资料" class="headerlink" title="相关资料"></a>相关资料</h3><ol>
+<li><a href="http://lamport.azurewebsites.net/pubs/paxos-simple.pdf" target="_blank" rel="noopener">Paxos made simple</a></li>
+</ol>
+<h2 id="ZAB"><a href="#ZAB" class="headerlink" title="ZAB"></a>ZAB</h2><p><strong>Zookeeper Atomic Broadcast（Zookeeper 原子消息广播协议，简称ZAB）协议</strong>是为分布式协调服务 Zookeeper <strong>专门设计</strong>的一种支持<strong>崩溃恢复</strong>的原子广播协议。</p>
+<p>基于 ZAB 协议，Zookeeper 实现了一种<strong>主备模式</strong>的系统架构来保持集群中各副本之间<strong>数据的一致性</strong>。这里的主备模型是指：Zookeeper 使用一个单一的主进程来接收并处理客户端的所有事务请求，并采用 ZAB 的原子广播协议，将服务器的状态变更以事务 Proposal 的形式广播到所有的副本进程上去。</p>
+<p>ZAB 的核心是定义那些会改变 Zookeeper 服务器数据状态的事务请求的处理方式，即：</p>
+<blockquote>
+<p>所有事务请求必须由一个全局唯一的服务器来协调处理，这样的服务器被称为 Leader 服务器，而余下的服务器被称为 Follower 服务器。Leader 服务器负责将一个客户端事务请求转换成一个事务 Proposal，并将该 Proposal 分发给集群中所有的 Follower 服务器。之后 Leader 会等待所有 Follower 服务器的反馈，一旦超过半数 Follower 服务器进行了正确的反馈后，那么 Leader 会再次向所有的 Follower 服务器分发 commit 消息，要求其将前一个 Proposal 进行提交。</p>
+</blockquote>
+<h3 id="角色、节点状态"><a href="#角色、节点状态" class="headerlink" title="角色、节点状态"></a>角色、节点状态</h3><p>ZAB 协议中有三种角色：<strong>Leader 领导者、Follower 跟随者、Observer 观察者</strong>：</p>
+<ul>
+<li><strong>Leader</strong>：集群中<strong>唯一</strong>的写请求处理者，能够发起投票（投票也是为了进行写请求）</li>
+<li><strong>Follower</strong>：能够接收客户端的读请求，如果是写请求则要转发给 Leader 。在选举过程中会<strong>参与投票</strong>，<strong>有选举权和被选举权</strong> 。</li>
+<li><strong>Observer</strong>：就是没有<strong>选举权和被选举权</strong>的 Follower，可以忽略。</li>
+</ul>
+<p>ZAB 协议中节点有三种状态：<strong>Following、Looking、Leading</strong>：</p>
+<ul>
+<li><strong>Following</strong>：当前节点是跟随者，服从 Leader 节点的命令。</li>
+<li><strong>Looking</strong>：当前节点是 Leader，负责协调事务。</li>
+<li><strong>Leading</strong>：节点处于选举状态，正在寻找 Leader。</li>
+</ul>
+<h3 id="协议介绍"><a href="#协议介绍" class="headerlink" title="协议介绍"></a>协议介绍</h3><p>ZAB 协议中有两种模式：</p>
+<ul>
+<li><p>崩溃恢复模式</p>
+<p>当整个服务启动过程中，或者当 Leader 服务器出现网络中断、崩溃退出或重启等异常情况时，ZAB 协议就会<strong>进入崩溃恢复模式</strong>并通过选举产生新的 Leader 服务器。</p>
+<p>当选举产生新的 Leader 服务器，同时集群中已有过半的节点和该 Leader 服务器完成数据同步后，ZAB 协议就会<strong>退出崩溃恢复模式</strong>。 </p>
+</li>
+<li><p>消息广播模式</p>
+<p>当集群中已有过半的节点和 Leader 服务器完成数据同步后，就可以<strong>进入消息广播模式</strong>。</p>
+</li>
+</ul>
+<h3 id="消息广播"><a href="#消息广播" class="headerlink" title="消息广播"></a>消息广播</h3><p>当集群中已有过半的节点和 Leader 服务器完成数据同步后，就可以<strong>进入消息广播模式</strong>。</p>
+<p>ZAB 协议的消息广播过程使用的是一个原子广播协议，类似于一个二阶段提交的过程。不同之处在于：</p>
+<ul>
+<li><p>移除了中断逻辑</p>
+<p>在 ZAB 协议的二阶段提交过程中，移除了中断逻辑，所有的 Follower 服务器要么正常反馈要么抛弃 Leader 服务器。崩溃或网络超时的 Follower 可以直接抛弃 Leader，并在数据同步阶段与集群达成一致，这种做法提高了集群的性能。</p>
+</li>
+<li><p>过半的 Follower 服务器反馈 Ack 之后就可以提交事务</p>
+<p>二阶段提交的要求协调者必须等到所有的参与者全部反馈 Ack 确认消息后，再发送 Commit 消息。但 ZAB 协议中只需要过半的 Follower 服务器反馈 Ack 之后就可以提交事务。</p>
+</li>
+</ul>
+<p>消息广播模式具体的步骤如下：</p>
+<ol>
+<li>客户端发起一个写操作请求。</li>
+<li>Leader 服务器将客户端的请求转化为事务 Proposal，同时为每个 Proposal 分配一个全局的ID，即 <strong>zxid</strong>。</li>
+<li>Leader 服务器为每个 Follower 服务器分配一个单独的队列，然后将需要广播的 Proposal 依次放到队列中取，并且根据 FIFO 策略进行消息发送。</li>
+<li>Follower 接收到 Proposal 后，会首先将其以事务日志的方式写入本地磁盘中，写入成功后向 Leader 反馈一个 Ack 响应消息。</li>
+<li>Leader 接收到超过半数以上 Follower 的 Ack 响应消息后，即认为消息发送成功，可以发送 commit 消息。</li>
+<li>Leader 向所有 Follower 广播 commit 消息，同时自身也会完成事务提交。Follower 接收到 commit 消息后，会将上一条事务提交。</li>
+</ol>
+<p>只要有一台服务器提交了 Proposal，就要确保所有的服务器最终都能正确提交 Proposal。这也是 CAP/ BASE 实现<strong>最终一致性</strong>的一个体现。</p>
+<p>Leader 服务器与每一个 Follower 服务器之间都维护了一个单独的 <strong>FIFO 消息队列</strong>进行收发消息，使用队列消息可以做到异步解耦。 Leader 和 Follower 之间只需要往队列中发消息即可。如果使用同步的方式会引起阻塞，性能要下降很多。由于协议是 *<em>通过 TCP *</em>来进行网络通信的，保证了消息的发送顺序性，接受顺序性也得到了保证。</p>
+<p>ZAB 协议中定义了一个全局单调递增的事务ID：<strong>zxid</strong> ，用于避免不同的 Leader 错误的使用了相同的 zxid 编号提出了不一样的 Proposal 的异常情况。它是一个 64 位 long 型，其中高32位表示 epoch 年代，低32位表示事务 id。epoch 可以理解为当前集群所处的年代，每次 Leader 变更之后都会在 epoch 的基础上加1。而低32位可以简单理解为递增的事务 id，Leader 在产生新的 Proposal 事务时，都会对其加1。</p>
+<h3 id="崩溃恢复"><a href="#崩溃恢复" class="headerlink" title="崩溃恢复"></a>崩溃恢复</h3><p>当整个服务启动过程中，或者当 Leader 服务器出现网络中断、崩溃退出或重启等异常情况时，ZAB 协议就会<strong>进入崩溃恢复模式</strong>并通过选举产生新的 Leader 服务器。</p>
+<p>ZAB 协议崩溃恢复需要满足以下两个条件：</p>
+<ul>
+<li>ZAB 协议需要确保已经被 Leader 提交的事务最终被所有服务器都提交。</li>
+<li>ZAB 协议需要确保丢弃那些只在 Leader 服务器上被提出的事务。</li>
+</ul>
+<h4 id="选举规则"><a href="#选举规则" class="headerlink" title="选举规则"></a>选举规则</h4><p>为了实现上面这两个条件，需要选举算法能够<strong>保证新选举出来的 Leader 服务器拥有集群中所有机器最高编号（即 zxid 最大）的事务</strong>，这样就可以保证这个新选举出来的 Leader 一定具有所有已经提交的提案。同时也避免了 Leader 服务器检查 Proposal 的提交和丢弃工作。</p>
+<h4 id="数据同步"><a href="#数据同步" class="headerlink" title="数据同步"></a>数据同步</h4><p>当选举产生新的 Leader 服务器之后，在正式开始工作之前（接收事务请求，然后提出新的 Proposal），Leader 服务器会首先确认事务日志中的所有的 Proposal 是否已经被集群中过半的服务器 Commit。</p>
+<p>Leader 服务器需要确保所有的 Follower 服务器能够接收到每一条事务的 Proposal ，并且能将所有已经提交的事务 Proposal 应用到内存数据中。等到 Follower 将所有尚未同步的事务 Proposal 都从 Leader 服务器上同步过啦并且应用到内存数据中以后，Leader 才会把该 Follower 加入到真正可用的 Follower 列表中。</p>
+<h3 id="状态流转"><a href="#状态流转" class="headerlink" title="状态流转"></a>状态流转</h3><ul>
+<li><strong>选举（Leader Election）</strong>：选出 Leader。</li>
+<li><strong>发现（Descovery）</strong>：Leader 会维护一个 Follower 的可用列表，将来客户端可以和其中的 Follower 节点进行通信。</li>
+<li><strong>同步（Synchronization）</strong>：Leader 要负责将本身的数据与 Follower 完成同步，做到多副本存储。</li>
+<li><strong>广播（Broadcast）</strong>：Leader 可以接受客户端新的 Proposal 请求，将新的 Proposal 请求广播给所有的 Follower。</li>
+</ul>
+<h2 id="Raft"><a href="#Raft" class="headerlink" title="Raft"></a>Raft</h2><h3 id="协议介绍-1"><a href="#协议介绍-1" class="headerlink" title="协议介绍"></a>协议介绍</h3><p>由于论文非常详细，直接查看论文即可。</p>
+<h3 id="优缺点-2"><a href="#优缺点-2" class="headerlink" title="优缺点"></a>优缺点</h3><h4 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h4><ol>
+<li>相比Paxos更容易理解和工程化实现</li>
+</ol>
+<h4 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h4><ol>
+<li>Raft有一个很强的假设是主（leader）和备（follower）都按顺序投票，存在并发瓶颈，可参考 <a href="https://www.zhihu.com/question/52337912" target="_blank" rel="noopener">OceanBase 的一致性协议为什么选择 paxos 而不是 raft?</a>，不过也可以参考 TiDB 使用 multi raft，或者是 PolarFS 使用的ParallelRaft。<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/33047950" target="_blank" rel="noopener">Elasticell-Multi-Raft实现</a></li>
+</ol>
+</li>
+<li>网络分区会导致脑裂，可能会导致stale read，可以通过ReadIndex Read和Lease Read的方法来解决。<ol>
+<li><a href="https://pingcap.com/blog-cn/lease-read/" target="_blank" rel="noopener">TiDB如何确认 leader 在处理这次 read 的时候一定是 leader</a></li>
+</ol>
+</li>
+</ol>
+<h3 id="相关资料-1"><a href="#相关资料-1" class="headerlink" title="相关资料"></a>相关资料</h3><ol>
+<li><a href="https://github.com/maemual/raft-zh_cn/blob/master/raft-zh_cn.md" target="_blank" rel="noopener">中文论文翻译</a></li>
+<li><a href="http://thesecretlivesofdata.com/raft/" target="_blank" rel="noopener">动画演示</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Jace Ding WeChat Pay"/>
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Jace Ding Alipay"/>
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7/" rel="tag"># 一致性</a>
+          
+            <a href="/tags/Raft/" rel="tag"># Raft</a>
+          
+            <a href="/tags/CAP/" rel="tag"># CAP</a>
+          
+            <a href="/tags/WARO/" rel="tag"># WARO</a>
+          
+            <a href="/tags/Quorum/" rel="tag"># Quorum</a>
+          
+            <a href="/tags/Base/" rel="tag"># Base</a>
+          
+            <a href="/tags/FLP/" rel="tag"># FLP</a>
+          
+            <a href="/tags/2PC/" rel="tag"># 2PC</a>
+          
+            <a href="/tags/3PC/" rel="tag"># 3PC</a>
+          
+            <a href="/tags/Paxos/" rel="tag"># Paxos</a>
+          
+            <a href="/tags/ZAB/" rel="tag"># ZAB</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/" rel="next" title="Raft协议">
+                <i class="fa fa-chevron-left"></i> Raft协议
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/10/16/MySQL%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/" rel="prev" title="MySQL环境搭建">
+                MySQL环境搭建 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Jace Ding" />
+          <p class="site-author-name" itemprop="name">Jace Ding</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">40</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">114</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/jaceding" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:931977674@qq.com" target="_blank" title="E-Mail">
+                  
+                    <i class="fa fa-fw fa-envelope"></i>
+                  
+                    
+                      E-Mail
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CAP-定理"><span class="nav-number">1.</span> <span class="nav-text">CAP 定理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#一致性"><span class="nav-number">1.1.</span> <span class="nav-text">一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可用性"><span class="nav-number">1.2.</span> <span class="nav-text">可用性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分区容错性"><span class="nav-number">1.3.</span> <span class="nav-text">分区容错性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#论证"><span class="nav-number">1.4.</span> <span class="nav-text">论证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#权衡"><span class="nav-number">1.5.</span> <span class="nav-text">权衡</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#CA"><span class="nav-number">1.5.1.</span> <span class="nav-text">CA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CP"><span class="nav-number">1.5.2.</span> <span class="nav-text">CP</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AP"><span class="nav-number">1.5.3.</span> <span class="nav-text">AP</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WARO-机制"><span class="nav-number">1.6.</span> <span class="nav-text">WARO 机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Quorum-机制"><span class="nav-number">1.7.</span> <span class="nav-text">Quorum 机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#N个9"><span class="nav-number">1.8.</span> <span class="nav-text">N个9</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Base-理论"><span class="nav-number">2.</span> <span class="nav-text">Base 理论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本可用"><span class="nav-number">2.1.</span> <span class="nav-text">基本可用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#软状态"><span class="nav-number">2.2.</span> <span class="nav-text">软状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最终一致性"><span class="nav-number">2.3.</span> <span class="nav-text">最终一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">2.4.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#FLP"><span class="nav-number">3.</span> <span class="nav-text">FLP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2PC-和-3PC"><span class="nav-number">4.</span> <span class="nav-text">2PC 和 3PC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#前言"><span class="nav-number">4.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2PC"><span class="nav-number">4.2.</span> <span class="nav-text">2PC</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#投票阶段"><span class="nav-number">4.2.1.</span> <span class="nav-text">投票阶段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#提交阶段"><span class="nav-number">4.2.2.</span> <span class="nav-text">提交阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#执行事务提交"><span class="nav-number">4.2.2.1.</span> <span class="nav-text">执行事务提交</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#中断事务"><span class="nav-number">4.2.2.2.</span> <span class="nav-text">中断事务</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#优缺点"><span class="nav-number">4.2.3.</span> <span class="nav-text">优缺点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3PC"><span class="nav-number">4.3.</span> <span class="nav-text">3PC</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#CanCommit"><span class="nav-number">4.3.1.</span> <span class="nav-text">CanCommit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#PreCommit"><span class="nav-number">4.3.2.</span> <span class="nav-text">PreCommit</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#执行事务预提交"><span class="nav-number">4.3.2.1.</span> <span class="nav-text">执行事务预提交</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#中断事务-1"><span class="nav-number">4.3.2.2.</span> <span class="nav-text">中断事务</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DoCommit"><span class="nav-number">4.3.3.</span> <span class="nav-text">DoCommit</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#执行提交"><span class="nav-number">4.3.3.1.</span> <span class="nav-text">执行提交</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#中断事务-2"><span class="nav-number">4.3.3.2.</span> <span class="nav-text">中断事务</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#协议补充"><span class="nav-number">4.3.4.</span> <span class="nav-text">协议补充</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#优缺点-1"><span class="nav-number">4.3.5.</span> <span class="nav-text">优缺点</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Paxos"><span class="nav-number">5.</span> <span class="nav-text">Paxos</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#算法角色"><span class="nav-number">5.1.</span> <span class="nav-text">算法角色</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安全性和活性"><span class="nav-number">5.2.</span> <span class="nav-text">安全性和活性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Basic-Paxos"><span class="nav-number">5.3.</span> <span class="nav-text">Basic Paxos</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Proposer-生成提案"><span class="nav-number">5.3.1.</span> <span class="nav-text">Proposer 生成提案</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Acceptor-批准提案"><span class="nav-number">5.3.2.</span> <span class="nav-text">Acceptor 批准提案</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#算法流程"><span class="nav-number">5.3.3.</span> <span class="nav-text">算法流程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Prepare-阶段"><span class="nav-number">5.3.3.1.</span> <span class="nav-text">Prepare 阶段</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Accept-阶段"><span class="nav-number">5.3.3.2.</span> <span class="nav-text">Accept 阶段</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#算法优化"><span class="nav-number">5.3.4.</span> <span class="nav-text">算法优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#提案的获取"><span class="nav-number">5.3.5.</span> <span class="nav-text">提案的获取</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#活锁"><span class="nav-number">5.3.6.</span> <span class="nav-text">活锁</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Multi-Paxos"><span class="nav-number">5.4.</span> <span class="nav-text">Multi-Paxos</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">5.5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#相关资料"><span class="nav-number">5.6.</span> <span class="nav-text">相关资料</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZAB"><span class="nav-number">6.</span> <span class="nav-text">ZAB</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#角色、节点状态"><span class="nav-number">6.1.</span> <span class="nav-text">角色、节点状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#协议介绍"><span class="nav-number">6.2.</span> <span class="nav-text">协议介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息广播"><span class="nav-number">6.3.</span> <span class="nav-text">消息广播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#崩溃恢复"><span class="nav-number">6.4.</span> <span class="nav-text">崩溃恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#选举规则"><span class="nav-number">6.4.1.</span> <span class="nav-text">选举规则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据同步"><span class="nav-number">6.4.2.</span> <span class="nav-text">数据同步</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#状态流转"><span class="nav-number">6.5.</span> <span class="nav-text">状态流转</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft"><span class="nav-number">7.</span> <span class="nav-text">Raft</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#协议介绍-1"><span class="nav-number">7.1.</span> <span class="nav-text">协议介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优缺点-2"><span class="nav-number">7.2.</span> <span class="nav-text">优缺点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#优点"><span class="nav-number">7.2.1.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#缺点"><span class="nav-number">7.2.2.</span> <span class="nav-text">缺点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#相关资料-1"><span class="nav-number">7.3.</span> <span class="nav-text">相关资料</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jace Ding</span>
+</div>
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
