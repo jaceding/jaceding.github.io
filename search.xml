@@ -4696,4 +4696,330 @@
         <tag>Anticipatory</tag>
       </tags>
   </entry>
+  <entry>
+    <title>NIO与零拷贝</title>
+    <url>/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/</url>
+    <content><![CDATA[<p>零拷贝是网络编程的关键，很多性能优化都离不开它。</p>
+<ul>
+<li><strong>零拷贝可以减少用户态与内核态的上下文切换</strong></li>
+<li><strong>零拷贝可以减少内存拷贝的次数</strong></li>
+</ul>
+<a id="more"></a>
+
+<h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><h3 id="DMA技术"><a href="#DMA技术" class="headerlink" title="DMA技术"></a>DMA技术</h3><p>在没有 DMA 技术前，IO 的过程是这样的：</p>
+<img src="/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/DMA_1.jpg" class="" title="DMA">
+
+<ol>
+<li>用户进程向 CPU 发起 read 系统调用读取数据，由用户态切换为内核态，然后一直阻塞等待数据的返回；</li>
+<li>CPU 在接收到指令以后对磁盘发起 IO 请求，将磁盘数据先放入磁盘控制器缓冲区；</li>
+<li>数据准备完成以后，磁盘向 CPU 发起 IO 中断；</li>
+<li>CPU 收到 IO 中断以后将磁盘缓冲区中的数据拷贝到内核缓冲区，然后再从内核缓冲区拷贝到用户缓冲区；</li>
+<li>用户进程由内核态切换回用户态，解除阻塞状态，然后等待 CPU 的下一个执行时间钟；</li>
+</ol>
+<p>整个数据的传输过程，都要需要 CPU 亲自参与搬运数据的过程，而且这个过程，CPU 是不能做其他事情的。于是就发明了 <strong>DMA</strong> 技术，也就是<strong>直接内存访问（Direct Memory Access）</strong> ，简单理解就是，<strong>在进行 IO 设备和内存的数据传输的时候，数据搬运的工作全部交给 DMA 控制器，而 CPU 不再参与任何与数据搬运相关的事情，这样 CPU 就可以去处理别的事务</strong>。</p>
+<p>使用 DMA 控制器进行数据传输的过程是这样的：</p>
+<img src="/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/DMA_2.jpg" class="" title="DMA">
+
+<ol>
+<li>用户进程向 CPU 发起 read 系统调用读取数据，由用户态切换为内核态，然后一直阻塞等待数据的返回。</li>
+<li>CPU 在接收到指令以后对 DMA 磁盘控制器发起调度指令。</li>
+<li>DMA 磁盘控制器对磁盘发起 IO 请求，将磁盘数据先放入磁盘控制器缓冲区，CPU 全程不参与此过程。</li>
+<li>数据读取完成后，DMA 磁盘控制器会接受到磁盘的通知，将数据从磁盘控制器缓冲区拷贝到内核缓冲区。</li>
+<li>DMA 磁盘控制器向 CPU 发出数据读完的信号，由 CPU 负责将数据从内核缓冲区拷贝到用户缓冲区。</li>
+<li>用户进程由内核态切换回用户态，解除阻塞状态，然后等待 CPU 的下一个执行时间钟。</li>
+</ol>
+<p>整个数据传输的过程，CPU 不再参与数据搬运的工作，而是全程由 DMA 完成，但是 CPU 在这个过程中也是必不可少的，因为传输什么数据，从哪里传输到哪里，都需要 CPU 来告诉 DMA 控制器。</p>
+<p>早期 DMA 只存在在主板上，如今由于 I/O 设备越来越多，数据传输的需求也不尽相同，所以每个 I/O 设备里面都有自己的 DMA 控制器。</p>
+<h3 id="PageCache"><a href="#PageCache" class="headerlink" title="PageCache"></a>PageCache</h3><p><strong>PageCache，也叫内核缓冲区</strong>。读写磁盘相比读写内存的速度慢太多了，所以我们应该想办法把读写磁盘替换成读写内存，但内存空间比较小，所以 <strong>PageCache 用来缓存最近被访问的数据，当空间不足时淘汰最久未被访问的缓存</strong>。</p>
+<p>读磁盘数据的时候，优先在 PageCache 找，如果数据存在则可以直接返回；如果没有，则从磁盘中读取，然后缓存 PageCache 中。</p>
+<h4 id="预读"><a href="#预读" class="headerlink" title="预读"></a>预读</h4><p>考虑到磁盘IO是非常高昂的操作，操作系统做了预读的优化，当一次 IO 时，不光把当前磁盘地址的数据，而是把相邻的数据也都读取到内存缓冲区内，因为当计算机访问一个地址的数据的时候，与其相邻的数据也会很快被访问到。</p>
+<h4 id="后写"><a href="#后写" class="headerlink" title="后写"></a>后写</h4><p>将很多小的逻辑写操作合并起来组成一个大的物理写操作。</p>
+<p>预读和后写大大提高读写磁盘的性能。</p>
+<h3 id="缓存IO和直接IO"><a href="#缓存IO和直接IO" class="headerlink" title="缓存IO和直接IO"></a>缓存IO和直接IO</h3><ul>
+<li>缓存IO：数据从磁盘先通过DMA copy到内核空间，再从内核空间通过cpu copy到用户空间</li>
+<li>直接IO：数据从磁盘通过DMA copy到用户空间</li>
+</ul>
+<p>绕开 PageCache 的 IO 叫直接 IO，使用 PageCache 的 IO 则叫缓存 IO。</p>
+<p>通常，对于磁盘，<strong>异步 IO 只支持直接 IO</strong>。</p>
+<p>缓存 IO 又被称为标准 IO，大多数文件系统的<strong>默认IO操作都是缓存IO</strong>。这样可以直接利用 PageCache 的优化。</p>
+<p>缓存 IO 的缺点：</p>
+<ul>
+<li>不适用大文件传输，大文件传输会导致热点小文件无法利用到 PageCache；</li>
+</ul>
+<p><strong>针对大文件的传输的方式，应该使用 异步 IO + 直接 IO 来替代零拷贝技术。</strong></p>
+<p>直接IO 的应用场景：</p>
+<ul>
+<li>应用程序已经实现了磁盘数据的缓存，那么可以不需要 PageCache 再次缓存，减少额外的性能损耗。在 MySQL 数据库中，可以通过参数设置开启直接 IO，默认是不开启；</li>
+<li>传输大文件的时候，由于大文件难以命中 PageCache 缓存，而且会占满 PageCache 导致热点文件无法充分利用缓存，从而增大了性能开销，因此，这时应该使用直接 IO。</li>
+</ul>
+<p>传输文件的时候，我们可以根据文件的大小来使用不同的方式：</p>
+<ul>
+<li>传输大文件的时候，使用 <strong>异步 IO + 直接 IO</strong>（直接IO也可认为是一种零拷贝技术）；</li>
+<li>传输小文件的时候，则使用 <strong>零拷贝技术</strong></li>
+</ul>
+<h2 id="传统IO方式"><a href="#传统IO方式" class="headerlink" title="传统IO方式"></a>传统IO方式</h2><p>在 Linux 系统中，传统的访问方式是通过 write() 和 read() 两个系统调用实现的，通过 read() 函数读取文件到到缓存区中，然后通过 write() 方法把缓存中的数据输出到网络端口。如下图所示：</p>
+<img src="/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/%E9%9B%B6%E6%8B%B7%E8%B4%9D_1.jpg" class="" title="零拷贝">
+
+<p>这两个系统调用，会<strong>发生 4 次用户态与内核态的上下文切换</strong>，每次系统调用都得先从用户态切换到内核态，等内核完成任务后，再从内核态切换回用户态。还<strong>发生了 4 次数据拷贝</strong>，其中两次是 DMA 的拷贝，另外两次则是通过 CPU 拷贝的，下面说一下这个过程：</p>
+<ol>
+<li>把磁盘上的数据拷贝到操作系统内核的缓冲区里，这个拷贝的过程是通过 DMA 搬运的。</li>
+<li>把内核缓冲区的数据拷贝到用户的缓冲区里，于是我们应用程序就可以使用这部分数据了，这个拷贝到过程是由 CPU 完成的。</li>
+<li>把刚才拷贝到用户的缓冲区里的数据，再拷贝到内核的 socket 的缓冲区里，这个过程依然还是由 CPU 搬运的。</li>
+<li>把内核的 socket 缓冲区里的数据，拷贝到网卡的缓冲区里，这个过程又是由 DMA 搬运的。</li>
+</ol>
+<p>这种简单又传统的文件传输方式，存在冗余的上文切换和数据拷贝，在高并发系统里是非常糟糕的，多了很多不必要的开销，会严重影响系统性能。</p>
+<p>要想提高文件传输的性能，就<strong>需要减少 用户态与内核态的上下文切换 和 内存拷贝 的次数</strong>。</p>
+<p>一次系统调用必然会发生 2 次上下文切换，所以<strong>要想减少上下文切换次数，就要减少系统调用次数</strong>。</p>
+<p>传统的文件传输方式会经历 4 次数据拷贝，从内核的读缓冲区拷贝到用户的缓冲区后，并没有对数据进行再加工，就从用户的缓冲区里又拷贝到 socket 的缓冲区里，因此将数据拷贝到用户的缓冲区是没有必要的，可以<strong>直接从内核的读缓冲区拷贝到socket的缓冲区</strong>。</p>
+<h2 id="零拷贝方式"><a href="#零拷贝方式" class="headerlink" title="零拷贝方式"></a>零拷贝方式</h2><p>零拷贝技术实现的方式通常有：</p>
+<ul>
+<li><strong>mmap + write</strong></li>
+<li><strong>sendfile</strong></li>
+<li><strong>splice</strong></li>
+</ul>
+<h3 id="mmap-write"><a href="#mmap-write" class="headerlink" title="mmap + write"></a>mmap + write</h3><p>在前面我们知道，read() 系统调用的过程中会把内核缓冲区的数据拷贝到用户的缓冲区里，于是为了减少这一步开销，我们可以用 mmap() 替换 read() 系统调用函数。</p>
+<p>mmap() 系统调用函数会直接<strong>把内核缓冲区里的数据映射到用户空间</strong>，这样操作系统内核与用户空间就不需要再进行任何的数据拷贝操作。如下图</p>
+<img src="/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/%E9%9B%B6%E6%8B%B7%E8%B4%9D_2.jpg" class="" title="零拷贝">
+
+<ol>
+<li>应用进程调用了 mmap() 后，DMA 会把磁盘的数据拷贝到内核的缓冲区里。接着，应用进程跟操作系统内核会<strong>共享</strong>这个缓冲区；</li>
+<li>应用进程再调用 write()，操作系统直接将内核缓冲区的数据拷贝到 socket 缓冲区中，这一切都发生在内核态，由 CPU 来搬运数据；</li>
+<li>最后，把内核的 socket 缓冲区里的数据，拷贝到网卡的缓冲区里，这个过程是由 DMA 搬运的。</li>
+</ol>
+<p>通过使用 mmap() 来代替 read()， 可以<strong>减少一次数据拷贝的过程</strong>。但这还不是最理想的零拷贝，因为仍然需要通过 CPU 把内核缓冲区的数据拷贝到 socket 缓冲区里，而且<strong>仍然需要 4 次上下文切换</strong>，因为系统调用还是 2 次。</p>
+<p>mmap 主要的用处是提高 I/O 性能，特别是针对大文件。<strong>对于小文件，内存映射文件反而会导致碎片空间的浪费，因为内存映射总是要对齐页边界</strong>，最小单位是 4 KB，一个 5 KB 的文件将会映射占用 8 KB 内存，也就会浪费 3 KB 内存。</p>
+<p>mmap 的拷贝虽然减少了 1 次拷贝，提升了效率，但也存在一些隐藏的问题。当 mmap 一个文件时，如果这个文件被另一个进程所截获，那么 write 系统调用会因为访问非法地址被 SIGBUS 信号终止，SIGBUS 默认会杀死进程并产生一个 coredump，<strong>服务器可能因此被终止</strong>。</p>
+<h3 id="sendfile"><a href="#sendfile" class="headerlink" title="sendfile"></a>sendfile</h3><p>在 Linux 内核版本 2.1 中，提供了一个专门发送文件的系统调用函数 sendfile()，函数形式如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/socket.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">ssize_t</span> <span class="title">sendfile</span><span class="params">(<span class="keyword">int</span> out_fd, <span class="keyword">int</span> in_fd, <span class="keyword">off_t</span> *offset, <span class="keyword">size_t</span> count)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>它的前两个参数分别是目的端和源端的文件描述符，后面两个参数是源端的偏移量和复制数据的长度，返回值是实际复制数据的长度。</p>
+<p>首先，它可以替代前面的 read() 和 write() 这两个系统调用，这样就可以减少一次系统调用，也就<strong>减少了 2 次上下文切换的开销</strong>。</p>
+<p>其次，该系统调用，可以直接把内核缓冲区里的数据拷贝到 socket 缓冲区里，不再拷贝到用户态，这样就<strong>只有 2 次上下文切换，和 3 次数据拷贝</strong>。如下图：</p>
+<img src="/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/%E9%9B%B6%E6%8B%B7%E8%B4%9D_3.jpg" class="" title="零拷贝">
+
+<p><strong>sendfile 存在的问题是用户程序不能对数据进行修改，而只是单纯地完成了一次数据传输过程。</strong></p>
+<h3 id="sendfile-SG-DMA"><a href="#sendfile-SG-DMA" class="headerlink" title="sendfile + SG-DMA"></a>sendfile + SG-DMA</h3><p>上面还不是真正的零拷贝技术，如果网卡支持 SG-DMA（<em>The Scatter-Gather Direct Memory Access</em>）技术（和普通的 DMA 有所不同），我们可以进一步减少通过 CPU 把内核缓冲区里的数据拷贝到 socket 缓冲区的过程。</p>
+<p>你可以在你的 Linux 系统通过下面这个命令，查看网卡是否支持 scatter-gather 特性：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ethtool -k eth0 | grep scatter-gather</span></span><br><span class="line">scatter-gather: on</span><br></pre></td></tr></table></figure>
+
+<p>于是，从 Linux 内核 2.4 版本开始起，对于支持网卡支持 SG-DMA 技术的情况下， sendfile() 系统调用的过程发生了点变化，具体过程如下：</p>
+<ol>
+<li>通过 DMA 将磁盘上的数据拷贝到内核缓冲区里；</li>
+<li>缓冲区描述符和数据长度传到 socket 缓冲区，这样网卡的 SG-DMA 控制器就可以直接将内核缓存中的数据拷贝到网卡的缓冲区里，此过程不需要将数据从操作系统内核缓冲区拷贝到 socket 缓冲区中，这样就减少了一次数据拷贝；</li>
+</ol>
+<p>所以，这个过程之中，只进行了 2 次数据拷贝，如下图：</p>
+<img src="/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/%E9%9B%B6%E6%8B%B7%E8%B4%9D_4.jpg" class="" title="零拷贝">
+
+<p>这就是所谓的<strong>零拷贝（Zero-copy）</strong>技术，因为我们没有在内存层面去拷贝数据，也就是说全程没有通过 CPU 来搬运数据，所有的数据都是通过 DMA 来进行传输的。</p>
+<p><strong>零拷贝技术的文件传输方式相比传统文件传输的方式，减少了 2 次上下文切换和数据拷贝次数，只需要 2 次上下文切换和数据拷贝次数，就可以完成文件的传输，而且 2 次的数据拷贝过程，都不需要通过 CPU，2 次都是由 DMA 来搬运。</strong></p>
+<p>sendfile + SG-DMA 的方式同样存在<strong>用户程序不能对数据进行修改的问题</strong>，<strong>而且本身需要硬件的支持</strong>，它只适用于将数据从文件拷贝到 socket 套接字上的传输过程。</p>
+<h3 id="splice"><a href="#splice" class="headerlink" title="splice"></a>splice</h3><p>Linux 在 2.6.17 版本引入 splice 系统调用，splice 去掉 sendfile 的使用范围限制，可以用于任意两个文件描述符中传输数据。</p>
+<p>但是 splice 也有局限，它使用了 Linux 的管道缓冲机制，所以，它的两个文件描述符参数中至少有一个必须是管道设备。</p>
+<p>基于 splice 系统调用的零拷贝方式，整个拷贝过程会发生 2 次上下文切换，0 次 CPU 拷贝以及 2 次 DMA 拷贝，用户程序读写数据的流程如下：</p>
+<ol>
+<li>用户进程通过 splice() 函数向内核发起系统调用，上下文从用户态切换为内核态。</li>
+<li>DMA 控制器将数据从主存或硬盘拷贝到内核空间的读缓冲区（read buffer）。</li>
+<li>CPU 在内核空间的读缓冲区（read buffer）和网络缓冲区（socket buffer）之间建立管道（pipeline）。</li>
+<li>DMA 控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。</li>
+<li>上下文从内核态切换回用户态，splice 系统调用执行返回。</li>
+</ol>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">CPU拷贝</th>
+<th align="center">DMA拷贝</th>
+<th align="center">系统调用</th>
+<th align="center">上下文切换</th>
+<th align="center">是否可修改数据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">read + write</td>
+<td align="center">2</td>
+<td align="center">2</td>
+<td align="center">read + write</td>
+<td align="center">4</td>
+<td align="center">是</td>
+</tr>
+<tr>
+<td align="center">mmap + wirte</td>
+<td align="center">1</td>
+<td align="center">2</td>
+<td align="center">mmap + write</td>
+<td align="center">4</td>
+<td align="center">是</td>
+</tr>
+<tr>
+<td align="center">sendfile</td>
+<td align="center">1</td>
+<td align="center">2</td>
+<td align="center">sendfile</td>
+<td align="center">2</td>
+<td align="center">否</td>
+</tr>
+<tr>
+<td align="center">sendfile + SG-DMA</td>
+<td align="center">0</td>
+<td align="center">2</td>
+<td align="center">sendfile</td>
+<td align="center">2</td>
+<td align="center">否</td>
+</tr>
+<tr>
+<td align="center">splice</td>
+<td align="center">0</td>
+<td align="center">2</td>
+<td align="center">splice</td>
+<td align="center">2</td>
+<td align="center">否</td>
+</tr>
+<tr>
+<td align="center">directio + aio</td>
+<td align="center">0</td>
+<td align="center">2</td>
+<td align="center">read + write</td>
+<td align="center">4</td>
+<td align="center">是</td>
+</tr>
+</tbody></table>
+<ul>
+<li>大文件传输，使用 <strong>directio + aio</strong></li>
+<li>小文件传输，需要修改数据使用 <strong>mmap + wirte</strong></li>
+<li>小文件传输，无需修改数据使用 <strong>sendfile</strong></li>
+<li>小文件传输，无需修改数据，且不支持 SG-DMA，有一个文件描述符是管道设备，使用 <strong>splice</strong></li>
+</ul>
+<h2 id="NIO零拷贝实现"><a href="#NIO零拷贝实现" class="headerlink" title="NIO零拷贝实现"></a>NIO零拷贝实现</h2><p>NIO 的核心是 Channel，Buffer 和 Selector，它们的关系如下：</p>
+<img src="/2021/03/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/NIO.png" class="" title="NIO">
+
+<h3 id="FileChannel"><a href="#FileChannel" class="headerlink" title="FileChannel"></a>FileChannel</h3><p>FileChannel 是NIO中一个用于文件读写、映射和操作的通道，同时它在并发环境下是线程安全的。</p>
+<p>FileChannel 定义了 transferFrom() 和 transferTo() 两个抽象方法，它们是 <strong>NIO 基于 sendfile 这种零拷贝方式的一种实现</strong>。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 把文件里面的源数据写入一个 WritableByteChannel 的目的通道</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">long</span> <span class="title">transferTo</span><span class="params">(<span class="keyword">long</span> position, <span class="keyword">long</span> count, WritableByteChannel target)</span></span>;</span><br><span class="line"><span class="comment">// 把一个源通道 ReadableByteChannel 中的数据读取到当前 FileChannel 的文件里面</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">long</span> <span class="title">transferFrom</span><span class="params">(ReadableByteChannel src, <span class="keyword">long</span> position, <span class="keyword">long</span> count)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>transferTo使用示例：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">transferTo</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    String sourceFile = <span class="string">"C:\\Users\\Administrator\\Desktop\\source.txt"</span>;</span><br><span class="line">    String targetFile = <span class="string">"C:\\Users\\Administrator\\Desktop\\target.txt"</span>;</span><br><span class="line">    <span class="keyword">try</span> (FileChannel sourceCh = <span class="keyword">new</span> RandomAccessFile(sourceFile, <span class="string">"rw"</span>).getChannel();</span><br><span class="line">         FileChannel targetCh = <span class="keyword">new</span> RandomAccessFile(targetFile, <span class="string">"rw"</span>).getChannel()) &#123;</span><br><span class="line">        <span class="keyword">long</span> position = <span class="number">0L</span>;</span><br><span class="line">        <span class="keyword">long</span> offset = sourceCh.size();</span><br><span class="line">        sourceCh.transferTo(position, offset, targetCh);</span><br><span class="line">        targetCh.force(<span class="keyword">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>transferFrom使用示例：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">transferFrom</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    String sourceFile = <span class="string">"C:\\Users\\Administrator\\Desktop\\source.txt"</span>;</span><br><span class="line">    String targetFile = <span class="string">"C:\\Users\\Administrator\\Desktop\\target.txt"</span>;</span><br><span class="line">    <span class="keyword">try</span> (FileChannel sourceCh = <span class="keyword">new</span> RandomAccessFile(sourceFile, <span class="string">"rw"</span>).getChannel();</span><br><span class="line">         FileChannel targetCh = <span class="keyword">new</span> RandomAccessFile(targetFile, <span class="string">"rw"</span>).getChannel()) &#123;</span><br><span class="line">        <span class="keyword">long</span> position = <span class="number">0L</span>;</span><br><span class="line">        <span class="keyword">long</span> offset = sourceCh.size();</span><br><span class="line">        targetCh.transferFrom(sourceCh, position, offset);</span><br><span class="line">        targetCh.force(<span class="keyword">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>force方法：将通道里尚未写入磁盘的数据强制写到磁盘上。</strong></p>
+<p>出于性能方面的考虑，操作系统会将数据缓存在内存中，所以无法保证写入到FileChannel里的数据一定会即时写到磁盘上。要保证这一点，需要调用force()方法，例如：targetCh.force(true)。</p>
+<p>transferTo源码实现（sun.nio.ch.FileChannelImpl类）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">transferTo</span><span class="params">(<span class="keyword">long</span> position, <span class="keyword">long</span> count,</span></span></span><br><span class="line"><span class="function"><span class="params">                       WritableByteChannel target)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">    ensureOpen();</span><br><span class="line">    <span class="keyword">if</span> (!target.isOpen())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ClosedChannelException();</span><br><span class="line">    <span class="keyword">if</span> (!readable)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> NonReadableChannelException();</span><br><span class="line">    <span class="keyword">if</span> (target <span class="keyword">instanceof</span> FileChannelImpl &amp;&amp;</span><br><span class="line">        !((FileChannelImpl)target).writable)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> NonWritableChannelException();</span><br><span class="line">    <span class="keyword">if</span> ((position &lt; <span class="number">0</span>) || (count &lt; <span class="number">0</span>))</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException();</span><br><span class="line">    <span class="keyword">long</span> sz = size();</span><br><span class="line">    <span class="keyword">if</span> (position &gt; sz)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> icount = (<span class="keyword">int</span>)Math.min(count, Integer.MAX_VALUE);</span><br><span class="line">    <span class="keyword">if</span> ((sz - position) &lt; icount)</span><br><span class="line">        icount = (<span class="keyword">int</span>)(sz - position);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">long</span> n;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Attempt a direct transfer, if the kernel supports it</span></span><br><span class="line">    <span class="keyword">if</span> ((n = transferToDirectly(position, icount, target)) &gt;= <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> n;</span><br><span class="line">    <span class="comment">// Attempt a mapped transfer, but only to trusted channel types</span></span><br><span class="line">    <span class="keyword">if</span> ((n = transferToTrustedChannel(position, icount, target)) &gt;= <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> n;</span><br><span class="line">    <span class="comment">// Slow path for untrusted targets</span></span><br><span class="line">    <span class="keyword">return</span> transferToArbitraryChannel(position, icount, target);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>首先执行 transferToDirectly 方法，以 sendfile 的零拷贝方式尝试数据拷贝。</li>
+<li>如果系统内核不支持 sendfile，进一步执行 transferToTrustedChannel() 方法，以 mmap 的零拷贝方式进行内存映射，这种情况下目的通道必须是 FileChannelImpl或者 SelChImpl 类型。</li>
+<li>如果都失败了，则执行 transferToArbitraryChannel 方法，基于传统的 I/O 方式完成读写。</li>
+</ol>
+<h3 id="MappedByteBuffer"><a href="#MappedByteBuffer" class="headerlink" title="MappedByteBuffer"></a>MappedByteBuffer</h3><p><strong>MappedByteBuffer 是 NIO 基于内存映射（mmap）这种零拷贝方式的一种实现</strong>。它继承自 ByteBuffer，通过 FileChannel 的 map 方法创建，可以把一个文件从 position 位置开始的 size 大小的区域映射为内存映像文件。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> MappedByteBuffer <span class="title">map</span><span class="params">(MapMode mode, <span class="keyword">long</span> position, <span class="keyword">long</span> size)</span></span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>mode：限定内存映射区域（MappedByteBuffer）对内存映像文件的访问模式，包括只可读（READ_ONLY）、可读可写（READ_WRITE）和写时拷贝（PRIVATE）三种模式。</li>
+<li>position：文件映射的起始地址，对应内存映射区域（MappedByteBuffer）的首地址。</li>
+<li>size：文件映射的字节长度，从 position 往后的字节数，对应内存映射区域（MappedByteBuffer）的大小。</li>
+</ul>
+<p>MappedByteBuffer 相比 ByteBuffer 新增了三个重要方法：</p>
+<ul>
+<li>force()：对于处于 READ_WRITE 模式下的缓冲区，把对缓冲区内容的修改强制刷新到本地文件。</li>
+<li>load()：将缓冲区的内容载入物理内存中，并返回这个缓冲区的引用。</li>
+<li>isLoaded()：如果缓冲区的内容在物理内存中，则返回 true，否则返回 false。</li>
+</ul>
+<p>MappedByteBuffer 使用示例：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writeToFileByMappedByteBuffer</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    String sourceFile = <span class="string">"C:\\Users\\Administrator\\Desktop\\source.txt"</span>;</span><br><span class="line">    String targetFile = <span class="string">"C:\\Users\\Administrator\\Desktop\\target.txt"</span>;</span><br><span class="line">    <span class="keyword">try</span> (FileChannel sourceCh = <span class="keyword">new</span> RandomAccessFile(sourceFile, <span class="string">"rw"</span>).getChannel();</span><br><span class="line">         FileChannel targetCh = <span class="keyword">new</span> RandomAccessFile(targetFile, <span class="string">"rw"</span>).getChannel()) &#123;</span><br><span class="line">        ByteBuffer sourceBuffer = ByteBuffer.allocate((<span class="keyword">int</span>) sourceCh.size());</span><br><span class="line">        sourceCh.read(sourceBuffer);</span><br><span class="line">        <span class="keyword">byte</span>[] bytes = sourceBuffer.array();</span><br><span class="line">        MappedByteBuffer mappedByteBuffer = targetCh.map(FileChannel.MapMode.READ_WRITE, </span><br><span class="line">                                                         <span class="number">0</span>, bytes.length);</span><br><span class="line">        mappedByteBuffer.put(bytes);</span><br><span class="line">        mappedByteBuffer.force();</span><br><span class="line">        <span class="comment">// 释放内存</span></span><br><span class="line">        Cleaner cl = ((DirectBuffer)mappedByteBuffer).cleaner();</span><br><span class="line">            <span class="keyword">if</span> (cl != <span class="keyword">null</span>)</span><br><span class="line">                cl.clean();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>map 方法源码实现（sun.nio.ch.FileChannelImpl类）：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> MappedByteBuffer <span class="title">map</span><span class="params">(MapMode mode, <span class="keyword">long</span> position, <span class="keyword">long</span> size)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        <span class="comment">// 由于代码较长，只保留核心</span></span><br><span class="line">        <span class="keyword">int</span> pagePosition = (<span class="keyword">int</span>)(position % allocationGranularity);</span><br><span class="line">        <span class="keyword">long</span> mapPosition = position - pagePosition;</span><br><span class="line">        <span class="keyword">long</span> mapSize = size + pagePosition;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// If no exception was thrown from map0, the address is valid</span></span><br><span class="line">            addr = map0(imode, mapPosition, mapSize);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (OutOfMemoryError x) &#123;</span><br><span class="line">            <span class="comment">// An OutOfMemoryError may indicate that we've exhausted memory</span></span><br><span class="line">            <span class="comment">// so force gc and re-attempt map</span></span><br><span class="line">            System.gc();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">100</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException y) &#123;</span><br><span class="line">                Thread.currentThread().interrupt();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                addr = map0(imode, mapPosition, mapSize);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (OutOfMemoryError y) &#123;</span><br><span class="line">                <span class="comment">// After a second OOME, fail</span></span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"Map failed"</span>, y);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// On Windows, and potentially other platforms, we need an open</span></span><br><span class="line">        <span class="comment">// file descriptor for some mapping operations.</span></span><br><span class="line">        FileDescriptor mfd;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            mfd = nd.duplicateForMapping(fd);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException ioe) &#123;</span><br><span class="line">            unmap0(addr, mapSize);</span><br><span class="line">            <span class="keyword">throw</span> ioe;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">assert</span> (IOStatus.checkAll(addr));</span><br><span class="line">        <span class="keyword">assert</span> (addr % allocationGranularity == <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">int</span> isize = (<span class="keyword">int</span>)size;</span><br><span class="line">        Unmapper um = <span class="keyword">new</span> Unmapper(addr, mapSize, isize, mfd);</span><br><span class="line">        <span class="keyword">if</span> ((!writable) || (imode == MAP_RO)) &#123;</span><br><span class="line">            <span class="keyword">return</span> Util.newMappedByteBufferR(isize,</span><br><span class="line">                                             addr + pagePosition,</span><br><span class="line">                                             mfd,</span><br><span class="line">                                             um);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> Util.newMappedByteBuffer(isize,</span><br><span class="line">                                            addr + pagePosition,</span><br><span class="line">                                            mfd,</span><br><span class="line">                                            um);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        threads.remove(ti);</span><br><span class="line">        end(IOStatus.checkAll(addr));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>map() 方法通过本地方法 map0() 为文件分配一块虚拟内存，作为它的内存映射区域，然后返回这块内存映射区域的起始地址。</li>
+<li>如果第一次文件映射导致 OOM，则触发垃圾回收，休眠 100ms 后再尝试映射，如果失败则抛出异常。</li>
+<li>通过 Util 类使用反射创建一个 DirectByteBuffer 实例，DirectByteBuffer 是 MappedByteBuffer 的子类。</li>
+</ol>
+<h3 id="DirectByteBuffer"><a href="#DirectByteBuffer" class="headerlink" title="DirectByteBuffer"></a>DirectByteBuffer</h3><p>DirectByteBuffer 的对象引用位于 Java 内存模型的堆里面，但内部的字节缓冲区位在于堆外的直接内存。</p>
+<p>DirectByteBuffer 初始化时通过 Unsafe 的本地方法 allocateMemory() 进行内存分配，底层调用的是操作系统的 malloc() 函数，除此之外，初始化时还会创建一个 Deallocator 线程，并通过 Cleaner 的 freeMemory() 方法来对直接内存进行回收操作，freeMemory() 底层调用的是操作系统的 free() 函数。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 关键构造方法</span></span><br><span class="line">DirectByteBuffer(<span class="keyword">int</span> cap) &#123;                   <span class="comment">// package-private</span></span><br><span class="line">    <span class="keyword">super</span>(-<span class="number">1</span>, <span class="number">0</span>, cap, cap);</span><br><span class="line">    <span class="keyword">boolean</span> pa = VM.isDirectMemoryPageAligned();</span><br><span class="line">    <span class="keyword">int</span> ps = Bits.pageSize();</span><br><span class="line">    <span class="keyword">long</span> size = Math.max(<span class="number">1L</span>, (<span class="keyword">long</span>)cap + (pa ? ps : <span class="number">0</span>));</span><br><span class="line">    Bits.reserveMemory(size, cap);</span><br><span class="line">    <span class="keyword">long</span> base = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        base = unsafe.allocateMemory(size);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (OutOfMemoryError x) &#123;</span><br><span class="line">        Bits.unreserveMemory(size, cap);</span><br><span class="line">        <span class="keyword">throw</span> x;</span><br><span class="line">    &#125;</span><br><span class="line">    unsafe.setMemory(base, size, (<span class="keyword">byte</span>) <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (pa &amp;&amp; (base % ps != <span class="number">0</span>)) &#123;</span><br><span class="line">        <span class="comment">// Round up to page boundary</span></span><br><span class="line">        address = base + ps - (base &amp; (ps - <span class="number">1</span>));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        address = base;</span><br><span class="line">    &#125;</span><br><span class="line">    cleaner = Cleaner.create(<span class="keyword">this</span>, <span class="keyword">new</span> Deallocator(base, size, cap));</span><br><span class="line">    att = <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 DirectByteBuffer 中，首先向 Bits 类申请额度，Bits类有一个全局的 totalCapacity 变量，记录着全部DirectByteBuffer 的总大小，每次申请，都先看看是否超限，可用 -XX:MaxDirectMemorySize 重新设定。如果不指定，该参数的默认值为Xmx的值减去1个Survior区的值。 如设置启动参数-Xmx20M -Xmn10M -XX：SurvivorRatio=8，那么申请20M-1M=19M的DirectMemory。</p>
+<p>如果已经超限，会主动执行Sytem.gc()，期待能主动回收一点堆外内存。System.gc() 会触发一个full gc，当然前提是没有显示的设置 <code>-XX:+DisableExplicitGC</code> 来禁用显式GC。不过，调用 System.gc() 并不能够保证 full gc 马上就能被执行。然后休眠一百毫秒，看看totalCapacity降下来没有，如果内存还是不足，就抛出OOM异常。如果额度被批准，就调用大名鼎鼎的 <code>sun.misc.Unsafe</code> 去分配内存，返回内存基地址。</p>
+<p>最后，创建一个Cleaner，并把代表清理动作的Deallocator类绑定 – 降低 Bits 里的totalCapacity，并调用 Unsafe free() 去释放内存。</p>
+<h4 id="内存回收策略"><a href="#内存回收策略" class="headerlink" title="内存回收策略"></a>内存回收策略</h4><p>Cleaner类继承了 <code>java.lang.ref.Reference</code>，GC线程会通过设置 Reference 的内部变量（pending变量为链表头部节点，discovered变量为下一个链表节点），将可被回收的不可达的Reference对象以链表的方式组织起来Reference的内部守护线程从链表的头部(head)消费数据，如果消费到的Reference对象同时也是Cleaner类型，线程会调用clean()方法。</p>
+<p>这里可以看到一种尴尬的情况，因为 DirectByteBuffer 本身的个头很小，只要熬过了 young gc，即使已经失效了也能在老生代里舒服的呆着，不容易把老生代撑爆触发full gc，如果没有别的大块头进入老生代触发full gc，就一直在那耗着，占着一大片堆外内存不释放。</p>
+<p>这时，就只能靠前面提到的申请额度超限时触发的system.gc()来救场了。但这道最后的保险其实也不很好，首先它会中断整个进程，然后它让当前线程睡了整整一百毫秒，而且如果gc没在一百毫秒内完成，它仍然会无情的抛出OOM异常。如果设置了-DisableExplicitGC禁止了system.gc()，那就不好玩了。</p>
+<p>所以，堆外内存还是自己主动点回收更好，比如Netty就是这么做的。DirectByteBuffer主动释放内存如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ByteBuffer buf = ByteBuffer.allocateDirect(<span class="number">1</span>);</span><br><span class="line">((DirectBuffer) byteBuffer).cleaner().clean();</span><br></pre></td></tr></table></figure>
+
+<h3 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h3><p>假设从网络中读入数据，再发送数据，采用 Non-direct ByteBuffer 的简化流程是这样的：</p>
+<figure class="highlight mipsasm"><table><tr><td class="code"><pre><span class="line">网络 –&gt; 临时的<span class="keyword">DirectByteBuffer </span>–&gt; 应用 Non-<span class="keyword">direct </span><span class="keyword">ByteBuffer </span>–&gt; 临时的<span class="keyword">Direct </span><span class="keyword">ByteBuffer </span>–&gt; 网络</span><br></pre></td></tr></table></figure>
+
+<p>采用 Direct ByteBuffer 的流程是这样的：</p>
+<figure class="highlight mipsasm"><table><tr><td class="code"><pre><span class="line">网络 –&gt; 应用 <span class="keyword">Direct </span><span class="keyword">ByteBuffer </span>–&gt; 网络</span><br></pre></td></tr></table></figure>
+
+<p>第二种方式是直接在堆外分配一个内存来存储数据， 程序通过 JNI 直接将数据读/写到堆外内存中。因为数据直接写入到了堆外内存中，所以这种方式就不会再在 JVM 管控的堆内再分配内存来存储数据了，也就不存在堆内内存和堆外内存数据拷贝的操作了。这样在进行I/O操作时，只需要将这个堆外内存地址传给JNI的I/O的函数就好了。</p>
+<p>从上面的流程可以发现，执行 read() 系统调用之后，无论是采取DirectByteBuffer还是Non-direct ByteBuffer，数据都是从内核缓冲区拷贝到DirectByteBuffer。</p>
+<p>那么采用Non-direct ByteBuffer时，<strong>为什么不直接将数据拷贝到Non-direct ByteBuffer中呢？</strong></p>
+<p>原因是执行native方法的线程，被认为是处于SafePoint，所以会发生 NIO，如果不复制到 DirectByteBuffer，就会有 GC 发生重排列对象内存的情况。</p>
+<p>传统 BIO 是面向 Stream 的，底层实现可以理解为写入的是 byte 数组，调用 native 方法写入 IO，传的参数是这个数组，就算GC改变了内存地址，但是拿这个数组的引用照样能找到最新的地址，对应的方法时是：FileOutputStream.write</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title">writeBytes</span><span class="params">(<span class="keyword">byte</span> b[], <span class="keyword">int</span> off, <span class="keyword">int</span> len, <span class="keyword">boolean</span> append)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>但是NIO，为了提升效率，传的是内存地址，省去了一次间接应用，但是就必须用 DirectByteBuffer 防止内存地址改变，对应的是 NativeDispatcher.write</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">abstract</span> <span class="keyword">int</span> <span class="title">write</span><span class="params">(FileDescriptor fd, <span class="keyword">long</span> address, <span class="keyword">int</span> len)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>那为何内存地址会改变呢？GC会回收无用对象，同时还会进行碎片整理，移动对象在内存中的位置，来减少内存碎片。DirectByteBuffer不受GC控制。如果不用 DirectByteBuffer 而是用 HeapByteBuffer，如果在调用系统调用时，发生了GC，导致 HeapByteBuffer 内存位置发生了变化，但是内核态并不能感知到这个变化导致系统调用读取或者写入错误的数据。<strong>所以一定要通过不受GC影响的DirectByteBuffer来进行IO系统调用</strong>。</p>
+<p>除了构造和析构临时 Direct ByteBuffer 的时间外，起码还能节约两次内存拷贝的时间。那么是否在任何情况下都采用Direct Buffer呢？对于大部分应用而言，两次内存拷贝的时间几乎可以忽略不计，而构造和析构DirectBuffer的时间却相对较长。</p>
+<p><strong>所以，一般的框架里面，会在启动时申请一大块DirectByteBuffer，然后自己做内存管理。</strong></p>
+<h3 id="Netty-noCleaner策略"><a href="#Netty-noCleaner策略" class="headerlink" title="Netty noCleaner策略"></a>Netty noCleaner策略</h3><p>带有Cleaner对象的 DirectByteBuffer 在初始化时：</p>
+<ol>
+<li>只有在DirectByteBuffer(int cap)构造方法中才会初始化Cleaner对象，方法中检查当前内存是否超过允许的最大堆外内存(可由-XX:MaxDirectMemorySize配置)</li>
+<li>如果超出，则会先尝试将不可达的Reference对象加入Reference链表中，依赖Reference的内部守护线程触发可以被回收DirectByteBuffer关联的Cleaner的run()方法</li>
+<li>如果内存还是不足， 则执行 System.gc()，触发full gc，来回收堆内存中的DirectByteBuffer对象来触发堆外内存回收，如果还是超过限制，则抛出java.lang.OutOfMemoryError(代码位java.nio.Bits#reserveMemory()方法)</li>
+</ol>
+<p>Netty 在4.1引入可以 noCleaner 策略：创建不带Cleaner的DirectByteBuffer对象，这样做的好处是绕开带Cleaner的DirectByteBuffer执行构造方法和执行Cleaner的clean()方法中一些额外开销，当堆外内存不够的时候，不会触发 System.gc()，提高性能。</p>
+<p>hasCleaner 的 DirectByteBuffer 和 noCleaner的 DirectByteBuffer 主要区别如下：</p>
+<ul>
+<li>创建方式不同<ul>
+<li>由反射调用 private DirectByteBuffer(long addr, int cap)创建；</li>
+<li>由 ByteBuffer.allocateDirect() -&gt; new DirectByteBuffer(int cap)创建；</li>
+</ul>
+</li>
+<li>释放内存的方式不同<ul>
+<li>noCleaner对象：使用 UnSafe.freeMemory(address)；</li>
+<li>hasCleaner对象：使用 DirectByteBuffer 的 Cleaner 的 clean() 方法；</li>
+</ul>
+</li>
+</ul>
+<p>Netty在启动时需要判断检查当前环境、环境配置参数是否允许noCleaner策略(具体逻辑位于PlatformDependent的static代码块，也可以调用PlatformDependent.useDirectBufferNoCleaner()方法查看当前Netty程序是否使用noClaner策略)，例如运行在Android下时，是没有Unsafe类的，不允许使用noCleaner策略，如果不允许，则使用hasCleaner策略。</p>
+<h3 id="查看DirectBuffer使用情况"><a href="#查看DirectBuffer使用情况" class="headerlink" title="查看DirectBuffer使用情况"></a>查看DirectBuffer使用情况</h3><ol>
+<li><p>进程内获取：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">MBeanServer mbs = ManagementFactory. getPlatformMBeanServer() ;</span><br><span class="line">ObjectName objectName = <span class="keyword">new</span> ObjectName(<span class="string">"java.nio:type=BufferPool,name=direct"</span> ) ;</span><br><span class="line">MBeanInfo info = mbs.getMBeanInfo(objectName) ;</span><br><span class="line"><span class="keyword">for</span>(MBeanAttributeInfo i : info.getAttributes()) &#123;</span><br><span class="line">    System.out .println(i.getName() + <span class="string">":"</span> + mbs.getAttribute(objectName , i.getName()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>远程进程</p>
+<p>JMX获取 如果目标机器没有启动JMX，那么添加jvm参数：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">-Dcom.sun.management.jmxremote.port=9999 </span><br><span class="line">-Dcom.sun.management.jmxremote.authenticate=false </span><br><span class="line">-Dcom.sun.management.jmxremotAe.ssl=false</span><br></pre></td></tr></table></figure>
+
+<p>重启进程，通过 JConsole 等工具查看</p>
+</li>
+</ol>
+<h2 id="Netty-零拷贝实现"><a href="#Netty-零拷贝实现" class="headerlink" title="Netty 零拷贝实现"></a>Netty 零拷贝实现</h2><p>Netty中零拷贝机制主要体现在以下方面：</p>
+<ol>
+<li>DefaultFileRegion 类对 java.nio.channels.FileChannel 的 tranferTo() 方法进行包装，在文件传输时可以将文件缓冲区的数据直接发送到目的通道（Channel）</li>
+<li>ByteBuf 可以通过 wrap 操作把字节数组、ByteBuf、ByteBuffer 包装成一个 ByteBuf 对象，使用堆外内存。</li>
+<li>ByteBuf 支持 slice 操作, 因此可以将 ByteBuf 分解为多个共享同一个存储区域的 ByteBuf，避免内存的拷贝。</li>
+<li>Netty 提供了 CompositeByteBuf 类，它可以将多个 ByteBuf 合并为一个逻辑上的 ByteBuf，避免了各个 ByteBuf 之间的拷贝。</li>
+</ol>
+<p>其中第 1 条属于操作系统层面的零拷贝操作，后面 3 条只能算用户层面的数据操作优化。</p>
+]]></content>
+      <categories>
+        <category>java</category>
+      </categories>
+      <tags>
+        <tag>Netty</tag>
+        <tag>NIO</tag>
+        <tag>零拷贝</tag>
+        <tag>mmap</tag>
+        <tag>sendfile</tag>
+        <tag>splice</tag>
+      </tags>
+  </entry>
 </search>

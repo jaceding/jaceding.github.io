@@ -200,6 +200,88 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/" class="post-title-link" itemprop="url">Raft协议</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-07 13:46:00" itemprop="dateCreated datePublished" datetime="2020-09-07T13:46:00+08:00">2020-09-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Paxos算法不容易实现，Raft算法是对Paxos算法的简化和改进。</p>
+<p>Raft算法将一致性问题分解为两个的子问题，<strong>Leader选举（Leader election）和日志复制（Log Replication）</strong>。</p>
+<p>Raft协议的节点有三种状态：<strong>Leader</strong>、<strong>Follower</strong>、<strong>Candidate</strong>。</p>
+<p>Leader：所有对系统的修改都会先经过leader。每个修改操作都会写一条日志，然后将日志复制到所有Follower节点，多数Follower节点响应时才提交日志，然后通知Follower节点提交日志，这个过程叫做<strong>Log Replication</strong>。</p>
+<p>Follower：所有节点都以follower的状态开始，如果没收到Leader的心跳则会变成Candidate状态。</p>
+<p>Candidate：发起投票，如果得到多数节点的选票则成为Leader，这个过程叫做<strong>Leader election</strong>。等待超时会重新发起投票，竞选失败（收到了Leader的心跳）则会变成Follower状态。</p>
+<p><a href="https://raft.github.io/" target="_blank" rel="noopener">Raft官网</a></p>
+<p><a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">Raft论文</a></p>
+<p><a href="http://thesecretlivesofdata.com/raft/" target="_blank" rel="noopener">Raft动画演示</a></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -505,81 +587,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CountDownLatch/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Jace Ding">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jace Ding">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CountDownLatch/" class="post-title-link" itemprop="url">深入理解CountDownLatch</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-08-14 11:26:03" itemprop="dateCreated datePublished" datetime="2020-08-14T11:26:03+08:00">2020-08-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><strong>CountDownLatch基于AQS的共享模式，用来控制一个或者多个线程等待多个线程</strong>。</p>
-<p>CountDownLatch使用一个计数器进行实现。当每一个线程完成自己任务后，计数器的值就会减一。当计数器的值为0时，表示所有的线程都已经完成一些任务，然后在CountDownLatch上等待的线程就可以恢复执行接下来的任务。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CountDownLatch/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -651,20 +658,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-count">43</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">121</span>
+        <span class="site-state-item-count">126</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
