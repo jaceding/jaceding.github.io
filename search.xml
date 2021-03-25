@@ -4635,4 +4635,65 @@
         <tag>内存屏障</tag>
       </tags>
   </entry>
+  <entry>
+    <title>磁盘IO调度策略</title>
+    <url>/2021/03/19/%E7%A3%81%E7%9B%98IO%E8%B0%83%E5%BA%A6%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<p>Linux 的文件 IO 子系统是 Linux 中最复杂的一个子系统（没有之一）。</p>
+<a id="more"></a>
+
+<p><a href="https://www.thomas-krenn.com/de/wikiDE/images/2/2d/Linux-storage-stack-diagram_v4.0.pdf" target="_blank" rel="noopener">下图来源</a></p>
+<img src="/2021/03/19/%E7%A3%81%E7%9B%98IO%E8%B0%83%E5%BA%A6%E7%AD%96%E7%95%A5/Linux-storage-stack-diagram.png" class="" title="Linux-storage-stack-diagram">
+
+<p>目前Linux系统中的I/O调度策略有4种，分别为（默认为CFQ）：</p>
+<ul>
+<li><strong>NOOP</strong></li>
+<li><strong>CFQ</strong>（默认）</li>
+<li><strong>DeadLine</strong></li>
+<li><strong>Anticipatory</strong></li>
+</ul>
+<h2 id="NOOP"><a href="#NOOP" class="headerlink" title="NOOP"></a>NOOP</h2><p>NOOP 全称 No Operation，该算法实现了最简单的 <strong>FIFO</strong> 队列，所有 IO 请求大致按照先来后到的顺序进行操作。之所以说“大致”，原因是 NOOP 在 FIFO 的基础上还做了<strong>相邻 IO 请求的合并</strong>，并不是完全按照先进先出的规则满足I/O请求。</p>
+<p>假设有如下的 IO 请求序列：</p>
+<figure class="highlight basic"><table><tr><td class="code"><pre><span class="line"><span class="symbol">100 </span><span class="number">500</span> <span class="number">101</span> <span class="number">10</span> <span class="number">56</span> <span class="number">1000</span></span><br></pre></td></tr></table></figure>
+
+<p>NOOP 将会按照如下顺序满足 IO 请求：</p>
+<figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line"><span class="number">100</span>(<span class="number">101</span>) <span class="number">500</span> <span class="number">10</span> <span class="number">56</span> <span class="number">1000</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="CFQ"><a href="#CFQ" class="headerlink" title="CFQ"></a>CFQ</h2><p>CFQ 全称 Completely Fair Queuing，该算法的特点是<strong>按照I/O请求的地址进行排序</strong>进行响应。</p>
+<p>CFQ 是默认的磁盘调度算法，它试图均匀地分布对 IO 带宽的访问，对于通用服务器来说是最好的选择。</p>
+<p>CFQ 为每个进程单独创建一个队列来管理该进程所产生的请求。每个进程一个队列，各队列之间的调度使用时间片进行调度，以此来保证每个进程都能被很好地分配到 IO 带宽。<strong>IO 调度器每次执行一个进程的4次请求</strong>。在传统的SAS盘上，磁盘寻道花去了绝大多数的 IO 响应时间。</p>
+<p>CFQ 的出发点是对 IO 地址进行排序，以尽量少的磁盘旋转次数来满足尽可能多的 IO 请求。在 CFQ 算法下，SAS盘的吞吐量大大提高了。相比于 NOOP 的缺点是，先来的 IO 请求并不一定能被满足，<strong>可能会出现“饿死”的情况</strong>。</p>
+<p>假设有如下的 IO 请求序列：</p>
+<figure class="highlight basic"><table><tr><td class="code"><pre><span class="line"><span class="symbol">100 </span><span class="number">500</span> <span class="number">101</span> <span class="number">10</span> <span class="number">56</span> <span class="number">1000</span></span><br></pre></td></tr></table></figure>
+
+<p>CFQ 将会按照如下顺序满足：（注意下面只有前4个IO请求进行了排序）</p>
+<figure class="highlight basic"><table><tr><td class="code"><pre><span class="line"><span class="symbol">100 </span><span class="number">101</span> <span class="number">500</span> <span class="number">1000</span> <span class="number">10</span> <span class="number">56</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="DeadLine"><a href="#DeadLine" class="headerlink" title="DeadLine"></a>DeadLine</h2><p>DeadLine 在 CFQ 的基础上，<strong>解决了 IO 请求“饿死”的极端情况</strong>。</p>
+<p>除了 CFQ 本身具有的 IO 排序队列，DeadLine 额外分别为读 IO 和写 IO 提供了FIFO队列。读FIFO队列的最大等待时间为500ms，写FIFO队列的最大等待时间为5s。FIFO队列内的 IO 请求优先级要比 CFQ 队列中的高，而读FIFO队列的优先级又比写FIFO队列的优先级高。优先级可以表示如下：</p>
+<figure class="highlight lisp"><table><tr><td class="code"><pre><span class="line">FIFO(<span class="name">read</span>) &gt; FIFO(<span class="name">write</span>) &gt; CFQ</span><br></pre></td></tr></table></figure>
+
+<h2 id="Anticipatory"><a href="#Anticipatory" class="headerlink" title="Anticipatory"></a>Anticipatory</h2><p>Anticipatory 在 DeadLine 的基础上，为每个读I/O都设置了6ms的等待时间窗口。如果在6ms内收到了相邻位置的读I/O请求，就可以立即满足。</p>
+<p>Anticipatory 算法通过增加等待时间来获得更高的性能，假设一个块设备只有一个物理查找磁头（例如一个单独的SATA硬盘），将多个随机的小写入流合并成一个大写入流（相当于将随机读写变顺序读写），通过这个原理来使用读取/写入的延时换取最大的读取/写入吞吐量。</p>
+<p>Anticipatory 算法从Linux 2.6.33版本后被删除了，因为使用 CFQ 通过配置也能达到 Anticipatory 的效果。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>Linux I/O调度器是 Linux 内核中的一个组成部分，用户可以通过根据不同的存储器来设置 Linux I/O 调度器从而达到优化系统性能。通常来说：</p>
+<ul>
+<li>NOOP 调度器适用于固态硬盘</li>
+<li>CFQ 调度器适用于桌面多任务及媒体应用</li>
+<li>DeadLine 调度器适用于写入较多的文件服务器，比如Web服务器，数据库应用</li>
+</ul>
+<h2 id="相关命令"><a href="#相关命令" class="headerlink" title="相关命令"></a>相关命令</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看磁盘的IO调度策略，注意：其中sda是硬盘名</span></span><br><span class="line">cat /sys/block/sda/queue/scheduler</span><br><span class="line"><span class="meta">#</span><span class="bash"> 设置IO调度策略为 cfq</span></span><br><span class="line">echo cfq &gt; /sys/block/sda/queue/scheduler</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>IO</tag>
+        <tag>NOOP</tag>
+        <tag>CFQ</tag>
+        <tag>DeadLine</tag>
+        <tag>Anticipatory</tag>
+      </tags>
+  </entry>
 </search>
