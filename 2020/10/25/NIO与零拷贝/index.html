@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://jaceding.github.io/2020/10/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/%E9%9B%B6%E6%8B%B7%E8%B4%9D_4.jpg">
 <meta property="og:image" content="https://jaceding.github.io/2020/10/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/NIO.png">
 <meta property="article:published_time" content="2020-10-25T07:21:32.000Z">
-<meta property="article:modified_time" content="2021-03-25T08:06:35.242Z">
+<meta property="article:modified_time" content="2021-03-25T13:11:36.014Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="Netty">
 <meta property="article:tag" content="NIO">
@@ -247,7 +247,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -521,7 +521,7 @@
 
 <p>第二种方式是直接在堆外分配一个内存来存储数据， 程序通过 JNI 直接将数据读/写到堆外内存中。因为数据直接写入到了堆外内存中，所以这种方式就不会再在 JVM 管控的堆内再分配内存来存储数据了，也就不存在堆内内存和堆外内存数据拷贝的操作了。这样在进行I/O操作时，只需要将这个堆外内存地址传给JNI的I/O的函数就好了。</p>
 <p>从上面的流程可以发现，执行 read() 系统调用之后，无论是采取DirectByteBuffer还是Non-direct ByteBuffer，数据都是从内核缓冲区拷贝到DirectByteBuffer。</p>
-<p>那么采用Non-direct ByteBuffer时，<strong>为什么不直接将数据拷贝到Non-direct ByteBuffer中呢？</strong></p>
+<p>那么采用 Non-direct ByteBuffer 时，<strong>为什么不直接将数据拷贝到Non-direct ByteBuffer中呢？</strong></p>
 <p>原因是执行native方法的线程，被认为是处于SafePoint，所以会发生 NIO，如果不复制到 DirectByteBuffer，就会有 GC 发生重排列对象内存的情况。</p>
 <p>传统 BIO 是面向 Stream 的，底层实现可以理解为写入的是 byte 数组，调用 native 方法写入 IO，传的参数是这个数组，就算GC改变了内存地址，但是拿这个数组的引用照样能找到最新的地址，对应的方法时是：FileOutputStream.write</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title">writeBytes</span><span class="params">(<span class="keyword">byte</span> b[], <span class="keyword">int</span> off, <span class="keyword">int</span> len, <span class="keyword">boolean</span> append)</span></span></span><br></pre></td></tr></table></figure>
@@ -696,7 +696,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -709,7 +709,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">126</span>
+        <span class="site-state-item-count">129</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
