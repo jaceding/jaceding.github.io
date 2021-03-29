@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://jaceding.github.io/2020/10/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/%E9%9B%B6%E6%8B%B7%E8%B4%9D_4.jpg">
 <meta property="og:image" content="https://jaceding.github.io/2020/10/25/NIO%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D/NIO.png">
 <meta property="article:published_time" content="2020-10-25T07:21:32.000Z">
-<meta property="article:modified_time" content="2021-03-27T10:27:42.039Z">
+<meta property="article:modified_time" content="2021-03-29T08:03:17.003Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="NIO">
 <meta property="article:tag" content="零拷贝">
@@ -501,7 +501,7 @@
 <li>通过 Util 类使用反射创建一个 DirectByteBuffer 实例，DirectByteBuffer 是 MappedByteBuffer 的子类。</li>
 </ol>
 <h3 id="DirectByteBuffer"><a href="#DirectByteBuffer" class="headerlink" title="DirectByteBuffer"></a>DirectByteBuffer</h3><p>DirectByteBuffer 的对象引用位于 Java 内存模型的堆里面，但内部的字节缓冲区位在于堆外的直接内存。</p>
-<p>DirectByteBuffer 初始化时通过 Unsafe 的本地方法 allocateMemory() 进行内存分配，底层调用的是操作系统的 malloc() 函数，除此之外，初始化时还会创建一个 Deallocator 线程，并通过 Cleaner 的 freeMemory() 方法来对直接内存进行回收操作，freeMemory() 底层调用的是操作系统的 free() 函数。</p>
+<p>DirectByteBuffer 初始化时通过 Unsafe 的本地方法 allocateMemory() 进行内存分配，底层调用的是操作系统的 malloc() 函数，除此之外，初始化时还会创建一个 Deallocator 线程，并通过 Cleaner 机制来调用 freeMemory() 方法来对直接内存进行回收操作，freeMemory() 底层调用的是操作系统的 free() 函数。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 关键构造方法</span></span><br><span class="line">DirectByteBuffer(<span class="keyword">int</span> cap) &#123;                   <span class="comment">// package-private</span></span><br><span class="line">    <span class="keyword">super</span>(-<span class="number">1</span>, <span class="number">0</span>, cap, cap);</span><br><span class="line">    <span class="keyword">boolean</span> pa = VM.isDirectMemoryPageAligned();</span><br><span class="line">    <span class="keyword">int</span> ps = Bits.pageSize();</span><br><span class="line">    <span class="keyword">long</span> size = Math.max(<span class="number">1L</span>, (<span class="keyword">long</span>)cap + (pa ? ps : <span class="number">0</span>));</span><br><span class="line">    Bits.reserveMemory(size, cap);</span><br><span class="line">    <span class="keyword">long</span> base = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        base = unsafe.allocateMemory(size);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (OutOfMemoryError x) &#123;</span><br><span class="line">        Bits.unreserveMemory(size, cap);</span><br><span class="line">        <span class="keyword">throw</span> x;</span><br><span class="line">    &#125;</span><br><span class="line">    unsafe.setMemory(base, size, (<span class="keyword">byte</span>) <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (pa &amp;&amp; (base % ps != <span class="number">0</span>)) &#123;</span><br><span class="line">        <span class="comment">// Round up to page boundary</span></span><br><span class="line">        address = base + ps - (base &amp; (ps - <span class="number">1</span>));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        address = base;</span><br><span class="line">    &#125;</span><br><span class="line">    cleaner = Cleaner.create(<span class="keyword">this</span>, <span class="keyword">new</span> Deallocator(base, size, cap));</span><br><span class="line">    att = <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>在 DirectByteBuffer 中，首先向 Bits 类申请额度，Bits类有一个全局的 totalCapacity 变量，记录着全部DirectByteBuffer 的总大小，每次申请，都先看看是否超限，可用 -XX:MaxDirectMemorySize 重新设定。如果不指定，该参数的默认值为Xmx的值减去1个Survior区的值。 如设置启动参数-Xmx20M -Xmn10M -XX：SurvivorRatio=8，那么申请20M-1M=19M的DirectMemory。</p>
@@ -696,7 +696,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-count">46</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -709,7 +709,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">129</span>
+        <span class="site-state-item-count">141</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
