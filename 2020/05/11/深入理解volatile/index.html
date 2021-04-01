@@ -36,7 +36,7 @@
 <meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/volatile%E5%AD%97%E8%8A%82%E7%A0%81%E5%AE%9E%E7%8E%B0-1.png">
 <meta property="og:image" content="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/volatile%E5%AD%97%E8%8A%82%E7%A0%81%E5%AE%9E%E7%8E%B0-2.png">
 <meta property="article:published_time" content="2020-05-11T02:55:10.000Z">
-<meta property="article:modified_time" content="2020-08-14T09:07:20.002Z">
+<meta property="article:modified_time" content="2021-03-29T09:52:24.698Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="volatile">
 <meta property="article:tag" content="内存屏障">
@@ -352,7 +352,8 @@
 
 <p>java 8中引入了一个更加简单的解决方案：<strong><code>@Contended</code>注解</strong>，比如ConcurrentHashMap中的CounterCell类就用到了这个注解。</p>
 <h4 id="更多资料"><a href="#更多资料" class="headerlink" title="更多资料"></a>更多资料</h4><ol>
-<li><a href="http://ifeve.com/disruptor/" target="_blank" rel="noopener">Disruptor消息队列</a></li>
+<li><a href="http://ifeve.com/disruptor/" target="_blank" rel="noopener">Disruptor消息队列</a>（推荐）</li>
+<li><a href="https://tech.meituan.com/2016/11/18/disruptor.html" target="_blank" rel="noopener">高性能队列——Disruptor</a>（推荐）</li>
 <li><a href="https://www.jianshu.com/p/a149730f0aec" target="_blank" rel="noopener">写缓冲器与无效化</a></li>
 <li><a href="https://www.toutiao.com/a6674518482819744270/?timestamp=1589209556&app=news_article&group_id=6674518482819744270&req_id=20200511230556010020047017014AB751" target="_blank" rel="noopener">CPU缓存一致性协议MESI，memory barrier和java volatile</a>（这篇不错）</li>
 <li><a href="https://www.jianshu.com/p/2ab5e3d7e510" target="_blank" rel="noopener">内存屏障</a></li>
@@ -525,7 +526,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">48</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -538,7 +539,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">141</span>
+        <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

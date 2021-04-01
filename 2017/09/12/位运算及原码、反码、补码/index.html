@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"jaceding.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="位运算程序中的所有数在计算机内存中都是以二进制的形式储存的，位运算就是直接对整数在内存中的二进制位进行操作。 位运算是更底层一些的操作，位运算通常相比其他运算有着更高的效率。">
+  <meta name="description" content="程序中的所有数在计算机内存中都是以二进制的形式储存的，位运算就是直接对整数在内存中的二进制位进行操作。 位运算是更底层一些的操作，位运算通常相比其他运算有着更高的效率。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="位运算及原码、反码、补码">
 <meta property="og:url" content="https://jaceding.github.io/2017/09/12/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%8F%8A%E5%8E%9F%E7%A0%81%E3%80%81%E5%8F%8D%E7%A0%81%E3%80%81%E8%A1%A5%E7%A0%81/index.html">
 <meta property="og:site_name" content="Jace Ding">
-<meta property="og:description" content="位运算程序中的所有数在计算机内存中都是以二进制的形式储存的，位运算就是直接对整数在内存中的二进制位进行操作。 位运算是更底层一些的操作，位运算通常相比其他运算有着更高的效率。">
+<meta property="og:description" content="程序中的所有数在计算机内存中都是以二进制的形式储存的，位运算就是直接对整数在内存中的二进制位进行操作。 位运算是更底层一些的操作，位运算通常相比其他运算有着更高的效率。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-09-12T11:38:23.000Z">
-<meta property="article:modified_time" content="2021-03-19T12:42:07.976Z">
+<meta property="article:modified_time" content="2021-03-31T06:00:02.436Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="位运算">
 <meta property="article:tag" content="原码">
@@ -252,11 +252,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h3 id="位运算"><a href="#位运算" class="headerlink" title="位运算"></a>位运算</h3><p>程序中的所有数在计算机内存中都是以二进制的形式储存的，<strong>位运算就是直接对整数在内存中的二进制位进行操作</strong>。</p>
+        <p>程序中的所有数在计算机内存中都是以二进制的形式储存的，<strong>位运算就是直接对整数在内存中的二进制位进行操作</strong>。</p>
 <p>位运算是更底层一些的操作，<strong>位运算通常相比其他运算有着更高的效率</strong>。</p>
 <a id="more"></a>
-<p><strong>运算符号</strong></p>
-<table>
+
+<h2 id="运算符号"><a href="#运算符号" class="headerlink" title="运算符号"></a>运算符号</h2><table>
 <thead>
 <tr>
 <th align="center">含义</th>
@@ -270,17 +270,17 @@
 <td align="center">a &amp; b</td>
 </tr>
 <tr>
-<td align="center">按位或</td>
+<td align="center">按位或（OR）</td>
 <td align="center">a | b</td>
 <td align="center">a | b</td>
 </tr>
 <tr>
-<td align="center">按位异或</td>
+<td align="center">按位异或（XOR）</td>
 <td align="center">a ^ b</td>
 <td align="center">a ^ b</td>
 </tr>
 <tr>
-<td align="center">按位取反</td>
+<td align="center">按位取反（NOT）</td>
 <td align="center">~ a</td>
 <td align="center">~ a</td>
 </tr>
@@ -300,34 +300,38 @@
 <td align="center">a &gt;&gt;&gt; b</td>
 </tr>
 </tbody></table>
-<h4 id="按位与（AND）"><a href="#按位与（AND）" class="headerlink" title="按位与（AND）"></a>按位与（AND）</h4><p>按位与处理两个长度相同的二进制数，两个相应的二进位都为1，该位的结果值才为1，否则为0。例如：</p>
+<h3 id="按位与（AND）"><a href="#按位与（AND）" class="headerlink" title="按位与（AND）"></a>按位与（AND）</h3><p>按位与处理两个长度相同的二进制数，两个相应的二进位都为1，该位的结果值才为1，否则为0。例如：</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">    <span class="number">0101</span>（十进制<span class="number">5</span>）</span><br><span class="line">AND <span class="number">0011</span>（十进制<span class="number">3</span>）</span><br><span class="line">  = <span class="number">0001</span>（十进制<span class="number">1</span>）</span><br></pre></td></tr></table></figure>
 
-<h4 id="按位或（OR）"><a href="#按位或（OR）" class="headerlink" title="按位或（OR）"></a>按位或（OR）</h4><p>按位或处理两个长度相同的二进制数，两个相应的二进位中只要有一个为1，该位的结果值为1。例如：</p>
+<h3 id="按位或（OR）"><a href="#按位或（OR）" class="headerlink" title="按位或（OR）"></a>按位或（OR）</h3><p>按位或处理两个长度相同的二进制数，两个相应的二进位中只要有一个为1，该位的结果值为1。例如：</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">   <span class="number">0101</span>（十进制<span class="number">5</span>）</span><br><span class="line">OR <span class="number">0011</span>（十进制<span class="number">3</span>）</span><br><span class="line"> = <span class="number">0111</span>（十进制<span class="number">7</span>）</span><br></pre></td></tr></table></figure>
 
-<h4 id="按位异或（XOR）"><a href="#按位异或（XOR）" class="headerlink" title="按位异或（XOR）"></a>按位异或（XOR）</h4><p>按位异或运算，对等长二进制模式按位或二进制数的每一位执行逻辑按位异或操作。<br>操作的结果是如果某位不同则该位为1，否则该位为0。例如：</p>
+<h3 id="按位异或（XOR）"><a href="#按位异或（XOR）" class="headerlink" title="按位异或（XOR）"></a>按位异或（XOR）</h3><p>按位异或运算，对等长二进制模式按位或二进制数的每一位执行逻辑按位异或操作。<br>操作的结果是如果某位不同则该位为1，否则该位为0。例如：</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">    <span class="number">0101</span>（十进制<span class="number">5</span>）</span><br><span class="line">XOR <span class="number">0011</span>（十进制<span class="number">3</span>）</span><br><span class="line">  = <span class="number">0110</span>（十进制<span class="number">6</span>）</span><br></pre></td></tr></table></figure>
 
-<h4 id="取反（NOT）"><a href="#取反（NOT）" class="headerlink" title="取反（NOT）"></a>取反（NOT）</h4><p>取反是一元运算符，对一个二进制数的每一位执行逻辑反操作。使数字1成为0，0成为1。例如：</p>
+<h3 id="按位取反（NOT）"><a href="#按位取反（NOT）" class="headerlink" title="按位取反（NOT）"></a>按位取反（NOT）</h3><p>取反是一元运算符，对一个二进制数的每一位执行逻辑反操作。使数字1成为0，0成为1。例如：</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">NOT <span class="number">0111</span>（十进制<span class="number">7</span>）</span><br><span class="line">  = <span class="number">1000</span>（十进制<span class="number">8</span>）</span><br></pre></td></tr></table></figure>
 
-<h4 id="左移"><a href="#左移" class="headerlink" title="左移"></a>左移</h4><p>左操作数按位左移右操作数指定的位数，移位后空缺的部分全部填0。</p>
+<h3 id="左移"><a href="#左移" class="headerlink" title="左移"></a>左移</h3><p>左操作数按位左移右操作数指定的位数，移位后空缺的部分全部填0。</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">    <span class="number">0001</span>（十进制<span class="number">1</span>）</span><br><span class="line">&lt;&lt;     <span class="number">3</span>（左移<span class="number">3</span>位）</span><br><span class="line">  = <span class="number">1000</span>（十进制<span class="number">8</span>）</span><br></pre></td></tr></table></figure>
 
-<h4 id="右移"><a href="#右移" class="headerlink" title="右移"></a>右移</h4><p>左操作数按位右移右操作数指定的位数，左边的用原有标志位补充，右边超出的部分舍弃。</p>
+<h3 id="右移"><a href="#右移" class="headerlink" title="右移"></a>右移</h3><p>左操作数按位右移右操作数指定的位数，左边的用原有标志位补充，右边超出的部分舍弃。</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">     <span class="number">1010</span>（十进制<span class="number">10</span>）</span><br><span class="line">&gt;&gt;      <span class="number">2</span>（右移<span class="number">2</span>位）</span><br><span class="line">   = <span class="number">0010</span>（十进制<span class="number">2</span>）</span><br></pre></td></tr></table></figure>
 
-<h5 id="无符号右移"><a href="#无符号右移" class="headerlink" title="无符号右移"></a>无符号右移</h5><p>相比 C、C++、JAVA中有一个特有的无符号右移操作符“&gt;&gt;&gt;”，此操作将忽略操作数的符号 同样的还有&gt;&gt;&gt;=。</p>
+<h3 id="无符号右移"><a href="#无符号右移" class="headerlink" title="无符号右移"></a>无符号右移</h3><p>相比 C、C++、JAVA中有一个特有的无符号右移操作符“&gt;&gt;&gt;”，此操作将忽略操作数的符号 同样的还有&gt;&gt;&gt;=。</p>
 <p>按位右移补零操作符。左操作数的值按右操作数指定的位数右移，左边部分总是以0填充，右边超出的部分舍弃。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a = -<span class="number">8</span>;</span><br><span class="line"><span class="keyword">int</span> b = a &gt;&gt; <span class="number">3</span>;</span><br><span class="line"><span class="keyword">int</span> c = a &gt;&gt;&gt; <span class="number">3</span>;</span><br><span class="line"></span><br><span class="line">结果：</span><br><span class="line">a -<span class="number">8</span>         <span class="number">11111111111111111111111111111000</span></span><br><span class="line">b -<span class="number">1</span>         <span class="number">11111111111111111111111111111111</span></span><br><span class="line">c <span class="number">536870911</span>     <span class="number">11111111111111111111111111111</span></span><br></pre></td></tr></table></figure>
 
-<p><strong>解读</strong>：</p>
-<p><strong>计算机中所有数都是以补码形式存储的</strong>（正数的补码是本身）。</p>
-<p>原码：10进制转换成2进制是原码</p>
-<p>反码： 正数的反码是本身，负数的反码是负数的原码0变为1,1变为0 （负数求反码时候的符号位不参与变换）</p>
-<p>补码： 正数的补码是本身，负数的补码就是负数的反码加一</p>
-<p>总结： 正数的原码，反码 ，补码三值合一， 负数的原码，反码，补码不同。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><strong>计算机中所有数都是以补码形式存储的</strong>（正数的补码是本身）。</p>
+<p><strong>原码：10进制转换成2进制是原码</strong></p>
+<p><strong>反码： 正数的反码是本身，负数的反码是负数的原码0变为1,1变为0 （负数求反码时候的符号位不参与变换）</strong></p>
+<p><strong>补码： 正数的补码是本身，负数的补码就是负数的反码加一</strong></p>
+<p><strong>总结： 正数的原码，反码 ，补码三值合一， 负数的原码，反码，补码不同。</strong></p>
+<p><strong>补码的意义：</strong></p>
+<ul>
+<li><strong>使符号位能与有效值部分一起参与运算，从而简化运算规则</strong></li>
+<li><strong>使减法运算转换为加法运算，进一步简化计算机中运算器的线路设计。</strong></li>
+</ul>
 <p><strong>-8</strong><br>原码 1000 0000 0000 0000 0000 0000 0000 1000<br>​反码 1111 1111 1111 1111 1111 1111 1111 0111<br>补码 1111 1111 1111 1111 1111 1111 1111 1000</p>
 <p><strong>带符号右移</strong>（左边的用原有标志位补充，右边超出的部分舍弃），即</p>
 <p>1111 1111 1111 1111 1111 1111 1111 1000  变成：<br>1111 1111 1111 1111 1111 1111 1111 1111</p>
@@ -335,7 +339,55 @@
 <p><strong>无符号右移</strong>（左边部分总是以0填充，右边超出的部分舍弃），即</p>
 <p>1111 1111 1111 1111 1111 1111 1111 1000  变成：<br>0001 1111 1111 1111 1111 1111 1111 1111</p>
 <p>补码 0001 1111 1111 1111 1111 1111 1111 1111 （正数的原码，反码 ，补码三值合一）<br>反码 0001 1111 1111 1111 1111 1111 1111 1111 （正数的原码，反码 ，补码三值合一）<br>原码 0001 1111 1111 1111 1111 1111 1111 1111 转化为十进制也就是 53687091</p>
-<h4 id="扩展为什么1字节表示的范围是-128-127"><a href="#扩展为什么1字节表示的范围是-128-127" class="headerlink" title="扩展为什么1字节表示的范围是[-128,127]"></a>扩展为什么1字节表示的范围是[-128,127]</h4><p>一个字节8位，即可表示2^8 =256，有符号数那就可以表示2^7 =128个正数、2^7 =128个负数了，但是1000 0000和0000 0000其实都是0,所以理论上它只能表示[-127, 127]。<br>如果计算机用原码或者反码，会多占用一个表达（+0、-0都会有各自的原码和反码）。但计算机中使用的是补码，+0、和-0的补码都是0000 0000,所以1000 0000可以用来多表达一个数，用来表示-128最合理。<br>还可以从另外一个角度来理解： -127 的补码是1000 0001.再减去1 就是1000 0000 。那-127-1=-128。<br>总结：补码不仅解决了符号的表示的问题，还统一了符号位和数值位，使得符号位可以和数值位一起直接参与运算。</p>
+<h2 id="位运算应用"><a href="#位运算应用" class="headerlink" title="位运算应用"></a>位运算应用</h2><p>很多源码中有关于使用位运算的优化。但一般的业务场景不建议使用这些优化，因为大多数编译器会帮我们优化代码。还有就是这样代码的可读性也会大大降低。我们更应该关注的是整体算法的效率，把一个时间复杂度为 O(n^2) 的代码优化到 O(n*logn) 的意义会更大。</p>
+<h3 id="乘法"><a href="#乘法" class="headerlink" title="乘法"></a>乘法</h3><p><strong>a &lt;&lt; n 等价于 a * pow(2, n)</strong></p>
+<h3 id="除法"><a href="#除法" class="headerlink" title="除法"></a>除法</h3><p><strong>a &gt;&gt; n 等价于 a / pow(2, n)</strong></p>
+<h3 id="取余"><a href="#取余" class="headerlink" title="取余"></a>取余</h3><p><strong>等价于 a &amp; (pow(2, n) - 1) 等价于 a % pow(2, n)</strong></p>
+<h3 id="交换两个数"><a href="#交换两个数" class="headerlink" title="交换两个数"></a>交换两个数</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">a ^= b </span><br><span class="line">b ^= a </span><br><span class="line">a ^= b</span><br></pre></td></tr></table></figure>
+
+<p>等价于</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">a += b</span><br><span class="line">b = a - b</span><br><span class="line">a = a - b</span><br></pre></td></tr></table></figure>
+
+<p>等价于</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">temp = a</span><br><span class="line">a = b</span><br><span class="line">b = temp</span><br></pre></td></tr></table></figure>
+
+<h3 id="绝对值"><a href="#绝对值" class="headerlink" title="绝对值"></a>绝对值</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a = -<span class="number">100</span>;</span><br><span class="line"><span class="keyword">int</span> sign = a &gt;&gt; <span class="number">31</span>;</span><br><span class="line"><span class="keyword">int</span> b = (a + sign) ^ sign</span><br></pre></td></tr></table></figure>
+
+<p>等价于</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a = -<span class="number">100</span>;</span><br><span class="line"><span class="keyword">int</span> b = Math.abs(a);</span><br></pre></td></tr></table></figure>
+
+<h3 id="判断奇偶性"><a href="#判断奇偶性" class="headerlink" title="判断奇偶性"></a>判断奇偶性</h3><p><strong>(a &amp; 1) == 0 等价于 a % 2 != 0</strong></p>
+<h3 id="判断大小"><a href="#判断大小" class="headerlink" title="判断大小"></a>判断大小</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">less</span><span class="params">(<span class="keyword">long</span> n1, <span class="keyword">long</span> n2)</span> </span>&#123;</span><br><span class="line">    n2 = ~(n2 - <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> (n1 &amp; n2) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>等价于</p>
+<p>n1 &lt; n2</p>
+<h3 id="bit状态位"><a href="#bit状态位" class="headerlink" title="bit状态位"></a>bit状态位</h3><p>在一个系统中，用户一般有查询(Select)、新增(Insert)、修改(Update)、删除(Selete)四种权限，四种权限有多种组合方式，也就是有16中不同的权限状态（2的4次方）。每一位代表一个状态是true还是false。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NewPermission</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 是否允许查询，二进制第1位，0表示否，1表示是</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> ALLOW_SELECT = <span class="number">1</span> &lt;&lt; <span class="number">0</span>; <span class="comment">// 0001</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 是否允许新增，二进制第2位，0表示否，1表示是</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> ALLOW_INSERT = <span class="number">1</span> &lt;&lt; <span class="number">1</span>; <span class="comment">// 0010</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 是否允许修改，二进制第3位，0表示否，1表示是</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> ALLOW_UPDATE = <span class="number">1</span> &lt;&lt; <span class="number">2</span>; <span class="comment">// 0100</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 是否允许删除，二进制第4位，0表示否，1表示是</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> ALLOW_DELETE = <span class="number">1</span> &lt;&lt; <span class="number">3</span>; <span class="comment">// 1000</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 存储目前的权限状态</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> flag;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *  重新设置权限</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setPermission</span><span class="params">(<span class="keyword">int</span> permission)</span> </span>&#123;</span><br><span class="line">        flag = permission;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *  添加一项或多项权限</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">enable</span><span class="params">(<span class="keyword">int</span> permission)</span> </span>&#123;</span><br><span class="line">        flag |= permission;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *  删除一项或多项权限</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">disable</span><span class="params">(<span class="keyword">int</span> permission)</span> </span>&#123;</span><br><span class="line">        flag &amp;= ~permission;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *  是否拥某些权限</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isAllow</span><span class="params">(<span class="keyword">int</span> permission)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (flag &amp; permission) == permission;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *  是否禁用了某些权限</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isNotAllow</span><span class="params">(<span class="keyword">int</span> permission)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (flag &amp; permission) == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *  是否仅仅拥有某些权限</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isOnlyAllow</span><span class="params">(<span class="keyword">int</span> permission)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> flag == permission;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="位计数"><a href="#位计数" class="headerlink" title="位计数"></a>位计数</h3><p>基于bit状态位，某个状态数里面，有多少个状态是true，就是计算这个状态数里面多少位是1。</p>
+<p>比较朴素的方法就是：先判断n的奇偶性，为奇数时计数器增加1，然后将n右移一位，重复上面的步骤，直到移位完毕。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> n = Integer.MAX_VALUE;</span><br><span class="line"><span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">while</span>(n!=<span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span>((n &amp; <span class="number">1</span>) == <span class="number">1</span>)&#123;</span><br><span class="line">        count++;</span><br><span class="line">    &#125;</span><br><span class="line">    n= n&gt;&gt;<span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>高效一点的方法通过：</p>
+<ol>
+<li><code>n &amp; (n - 1)</code>可以移除最后一位1 （假设最后一位本来是0， 减一后必为1，0 &amp; 1为 0， 最后一位本来是1，减一后必为0，0 &amp; 1为 0）</li>
+<li>移除了最后一位1之后，计数加1，如果结果不为零，则用结果继续第一步。</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> n = Integer.MAX_VALUE;</span><br><span class="line"><span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">while</span>(n != <span class="number">0</span>) &#123;</span><br><span class="line">    n &amp;= n - <span class="number">1</span>;</span><br><span class="line">    count++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>更高效的方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">n = n - ((n &gt;&gt; <span class="number">1</span>) &amp; <span class="number">0x55555555</span>);</span><br><span class="line">n = (n &amp; <span class="number">0x33333333</span>) + ((n &gt;&gt; <span class="number">2</span>) &amp; <span class="number">0x33333333</span>);</span><br><span class="line">n = (n + (n &gt;&gt; <span class="number">4</span>)) &amp; <span class="number">0x0F0F0F0F</span>;</span><br><span class="line">n = n + (n &gt;&gt; <span class="number">8</span>);</span><br><span class="line">n = n + (n &gt;&gt; <span class="number">16</span>);</span><br><span class="line">count = n &amp; <span class="number">0x0000003F</span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="将一个数向上取整为2的幂"><a href="#将一个数向上取整为2的幂" class="headerlink" title="将一个数向上取整为2的幂"></a>将一个数向上取整为2的幂</h3><p>HashMap 中的源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">tableSizeFor</span><span class="params">(<span class="keyword">int</span> cap)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> n = cap - <span class="number">1</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">1</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">2</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">4</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">8</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">16</span>;</span><br><span class="line">    <span class="keyword">return</span> (n &lt; <span class="number">0</span>) ? <span class="number">1</span> : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="扰动函数"><a href="#扰动函数" class="headerlink" title="扰动函数"></a>扰动函数</h3><p>HashMap 中的源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="keyword">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参考：<a href="https://zhuanlan.zhihu.com/p/309991114" target="_blank" rel="noopener">HashMap这次是真的懂了，扰动函数、负载因子、扩容拆分全搞定</a></p>
+<h2 id="为什么1字节表示的范围是-128-127"><a href="#为什么1字节表示的范围是-128-127" class="headerlink" title="为什么1字节表示的范围是[-128,127]"></a>为什么1字节表示的范围是[-128,127]</h2><p>一个字节8位，即可表示2^8 =256，有符号数那就可以表示2^7 =128个正数、2^7 =128个负数了，但是1000 0000和0000 0000其实都是0,所以理论上它只能表示[-127, 127]。<br>如果计算机用原码或者反码，会多占用一个表达（+0、-0都会有各自的原码和反码）。但计算机中使用的是补码，+0、和-0的补码都是0000 0000,所以1000 0000可以用来多表达一个数，用来表示-128最合理。<br>还可以从另外一个角度来理解： -127 的补码是1000 0001.再减去1 就是1000 0000 。那-127-1=-128。<br>总结：补码不仅解决了符号的表示的问题，还统一了符号位和数值位，使得符号位可以和数值位一起直接参与运算。</p>
 
     </div>
 
@@ -442,7 +494,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#位运算"><span class="nav-number">1.</span> <span class="nav-text">位运算</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#按位与（AND）"><span class="nav-number">1.1.</span> <span class="nav-text">按位与（AND）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#按位或（OR）"><span class="nav-number">1.2.</span> <span class="nav-text">按位或（OR）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#按位异或（XOR）"><span class="nav-number">1.3.</span> <span class="nav-text">按位异或（XOR）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#取反（NOT）"><span class="nav-number">1.4.</span> <span class="nav-text">取反（NOT）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#左移"><span class="nav-number">1.5.</span> <span class="nav-text">左移</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#右移"><span class="nav-number">1.6.</span> <span class="nav-text">右移</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#无符号右移"><span class="nav-number">1.6.1.</span> <span class="nav-text">无符号右移</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#扩展为什么1字节表示的范围是-128-127"><span class="nav-number">1.7.</span> <span class="nav-text">扩展为什么1字节表示的范围是[-128,127]</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#运算符号"><span class="nav-number">1.</span> <span class="nav-text">运算符号</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#按位与（AND）"><span class="nav-number">1.1.</span> <span class="nav-text">按位与（AND）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#按位或（OR）"><span class="nav-number">1.2.</span> <span class="nav-text">按位或（OR）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#按位异或（XOR）"><span class="nav-number">1.3.</span> <span class="nav-text">按位异或（XOR）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#按位取反（NOT）"><span class="nav-number">1.4.</span> <span class="nav-text">按位取反（NOT）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#左移"><span class="nav-number">1.5.</span> <span class="nav-text">左移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#右移"><span class="nav-number">1.6.</span> <span class="nav-text">右移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#无符号右移"><span class="nav-number">1.7.</span> <span class="nav-text">无符号右移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">1.8.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#位运算应用"><span class="nav-number">2.</span> <span class="nav-text">位运算应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#乘法"><span class="nav-number">2.1.</span> <span class="nav-text">乘法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#除法"><span class="nav-number">2.2.</span> <span class="nav-text">除法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#取余"><span class="nav-number">2.3.</span> <span class="nav-text">取余</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#交换两个数"><span class="nav-number">2.4.</span> <span class="nav-text">交换两个数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#绝对值"><span class="nav-number">2.5.</span> <span class="nav-text">绝对值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#判断奇偶性"><span class="nav-number">2.6.</span> <span class="nav-text">判断奇偶性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#判断大小"><span class="nav-number">2.7.</span> <span class="nav-text">判断大小</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bit状态位"><span class="nav-number">2.8.</span> <span class="nav-text">bit状态位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#位计数"><span class="nav-number">2.9.</span> <span class="nav-text">位计数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#将一个数向上取整为2的幂"><span class="nav-number">2.10.</span> <span class="nav-text">将一个数向上取整为2的幂</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#扰动函数"><span class="nav-number">2.11.</span> <span class="nav-text">扰动函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么1字节表示的范围是-128-127"><span class="nav-number">3.</span> <span class="nav-text">为什么1字节表示的范围是[-128,127]</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -458,7 +510,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">48</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -471,7 +523,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">141</span>
+        <span class="site-state-item-count">145</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
