@@ -5282,11 +5282,15 @@
 <li>单线程中的每个操作，happen-before 对应该线程中任意后续操作（也就是as-if-serial语义保证）。</li>
 <li>对volatile变量的写入，happen-before对应后续对这个变量的读取。</li>
 <li>对synchronized的解锁，happen-before对应后续对这个锁的加锁。</li>
+<li>对final变量的写，happen-before于final域对象的读，happen-before于后续对final变量的读。</li>
 <li>…</li>
 </ol>
 <p>volatile 和 synchronized 都具有Happens-Before语义（不是只有它们才具有Happens-Before语义）。</p>
 <p>对于非volatile变量的写入和读取，不在这个承诺之列。通俗来讲，就是JMM对编译器和CPU 来说，volatile 变量不能重排序；非volatile 变量可以任意重排序（保证as-if-serial语义的前提）。</p>
 <p>如果一个操作执行的结果需要对另一个操作可见，那么这两个操作之间必须存在happens-before关系。</p>
+<p>从底向上看volatile背后的原理：</p>
+<img src="/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/%E5%BA%95%E5%B1%82.jpg" class="" title="底层">
+
 <h4 id="Happens-Before的传递性"><a href="#Happens-Before的传递性" class="headerlink" title="Happens-Before的传递性"></a>Happens-Before的传递性</h4><p>除了这些基本的 happen-before 规则，happen-before还具有传递性，即若A happen-before B，B happen-before C，则A happen-before C。</p>
 <h3 id="总线风暴"><a href="#总线风暴" class="headerlink" title="总线风暴"></a>总线风暴</h3><p>由于 volatile 的 mesi 缓存一致性协议需要不断的从主内存嗅探 和 cas 不断循环无效交互导致总线带宽达到峰值。</p>
 <p><strong>解决办法：</strong>部分volatile和cas使用synchronized</p>
@@ -6130,6 +6134,153 @@
         <tag>Netty</tag>
         <tag>池化内存</tag>
         <tag>内存管理</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>深入理解Disruptor</title>
+    <url>/2021/04/08/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Disruptor/</url>
+    <content><![CDATA[<p>Disruptor 是英国外汇交易公司LMAX开发的一个高性能队列，研发的初衷是解决内存队列的延迟问题（在性能测试中发现竟然与I/O操作处于同样的数量级）。基于Disruptor开发的系统单线程能支撑每秒600万订单。</p>
+<a id="more"></a>
+
+<h2 id="Java-内置队列"><a href="#Java-内置队列" class="headerlink" title="Java 内置队列"></a>Java 内置队列</h2><table>
+<thead>
+<tr>
+<th align="center">队列</th>
+<th align="center">有界性</th>
+<th align="center">锁</th>
+<th align="center">数据结构</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">ArrayBlockingQueue</td>
+<td align="center">有界</td>
+<td align="center">加锁</td>
+<td align="center">arraylist</td>
+</tr>
+<tr>
+<td align="center">LinkedBlockingQueue</td>
+<td align="center">有界</td>
+<td align="center">加锁</td>
+<td align="center">linkedlist</td>
+</tr>
+<tr>
+<td align="center">ConcurrentLinkedQueue</td>
+<td align="center">unbounded</td>
+<td align="center">CAS</td>
+<td align="center">linkedlist</td>
+</tr>
+<tr>
+<td align="center">LinkedTransferQueue</td>
+<td align="center">unbounded</td>
+<td align="center">CAS</td>
+<td align="center">linkedlist</td>
+</tr>
+<tr>
+<td align="center">PriorityBlockingQueue</td>
+<td align="center">unbounded</td>
+<td align="center">加锁</td>
+<td align="center">heap</td>
+</tr>
+<tr>
+<td align="center">DelayQueue</td>
+<td align="center">unbounded</td>
+<td align="center">加锁</td>
+<td align="center">heap</td>
+</tr>
+</tbody></table>
+<p>队列的底层一般分成三种：数组、链表和堆。其中，堆一般情况下是为了实现带有优先级特性的队列，暂且不考虑。</p>
+<p>基于数组线程安全的队列，比较典型的是ArrayBlockingQueue，它主要通过加锁的方式来保证线程安全。</p>
+<p>基于链表实现的无锁队列 LinkedTransferQueue 是通过CAS 这种不加锁的方式来实现的。（LinkedTransferQueue 性能强）</p>
+<p><strong>通过不加锁的方式实现的队列都是无界的（无法保证队列的长度在确定的范围内）；</strong>而加锁的方式，可以实现有界队列。</p>
+<p>在稳定性要求特别高的系统中，为了防止生产者速度过快，导致内存溢出，只能选择有界队列；同时，为了减少Java的垃圾回收对系统性能的影响，会尽量选择array / heap格式的数据结构。这样筛选下来，符合条件的队列就只有 ArrayBlockingQueue。（针对 linkedlist格式的数据结构，每个element都要另new一个wrapper object，所以object数量要高）</p>
+<p>但 ArrayBlockingQueue 在实际使用过程中，会因为加锁和伪共享等出现严重的性能问题。</p>
+<h2 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h2><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">LongEvent</span> </span>&#123;</span><br><span class="line">        <span class="keyword">long</span> value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">LongEventConsumer</span> <span class="keyword">implements</span> <span class="title">EventHandler</span>&lt;<span class="title">LongEvent</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onEvent</span><span class="params">(LongEvent event, <span class="keyword">long</span> sequence, <span class="keyword">boolean</span> endOfBatch)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">            System.out.println(<span class="string">"event = "</span> + event.value);</span><br><span class="line">            System.out.println(<span class="string">"sequence = "</span> + sequence);</span><br><span class="line">            System.out.println(<span class="string">"endOfBatch = "</span> + endOfBatch);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">LongEventProducer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> RingBuffer&lt;LongEvent&gt; ringBuffer;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">LongEventProducer</span><span class="params">(RingBuffer&lt;LongEvent&gt; ringBuffer)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.ringBuffer = ringBuffer;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> EventTranslatorOneArg&lt;LongEvent, ByteBuffer&gt; TRANSLATOR = <span class="keyword">new</span> EventTranslatorOneArg&lt;LongEvent, ByteBuffer&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">translateTo</span><span class="params">(LongEvent event, <span class="keyword">long</span> sequence, ByteBuffer byteBuffer)</span> </span>&#123;</span><br><span class="line">                event.value = byteBuffer.getLong(<span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onData</span><span class="params">(ByteBuffer byteBuffer)</span> </span>&#123;</span><br><span class="line">            ringBuffer.publishEvent(TRANSLATOR, byteBuffer);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// RingBuffer生产工厂,初始化RingBuffer的时候使用</span></span><br><span class="line">        EventFactory&lt;LongEvent&gt; factory = LongEvent::<span class="keyword">new</span>;</span><br><span class="line">        <span class="comment">// RingBuffer 大小，必须是2的次幂</span></span><br><span class="line">        <span class="keyword">int</span> bufferSize = <span class="number">1024</span>;</span><br><span class="line">        <span class="comment">// 创建Disruptor</span></span><br><span class="line">        Disruptor&lt;LongEvent&gt; disruptor = <span class="keyword">new</span> Disruptor&lt;&gt;(factory, bufferSize, DaemonThreadFactory.INSTANCE);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 设置消费者 处理Event</span></span><br><span class="line">        disruptor.handleEventsWith(<span class="keyword">new</span> LongEventConsumer());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 启动Disruptor，开启所有的线程</span></span><br><span class="line">        disruptor.start();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 获取RingBuffer用于生产数据</span></span><br><span class="line">        RingBuffer&lt;LongEvent&gt; ringBuffer = disruptor.getRingBuffer();</span><br><span class="line"></span><br><span class="line">        LongEventProducer producer = <span class="keyword">new</span> LongEventProducer(ringBuffer);</span><br><span class="line">        ByteBuffer byteBuffer = ByteBuffer.allocate(<span class="number">8</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">long</span> i = <span class="number">0</span>; ; i++) &#123;</span><br><span class="line">            byteBuffer.putLong(<span class="number">0</span>, i);</span><br><span class="line">            producer.onData(byteBuffer);</span><br><span class="line">            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(<span class="number">1</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Disruptor"><a href="#Disruptor" class="headerlink" title="Disruptor"></a>Disruptor</h2><p>LMAX Disruptor是一个高性能的线程间消息传递库。它源于LMAX对并发，性能和非阻塞算法的研究，如今已成为其Exchange基础结构的核心部分。</p>
+<p><a href="https://github.com/LMAX-Exchange/disruptor/wiki" target="_blank" rel="noopener">官方文档</a></p>
+<h3 id="高性能的原因"><a href="#高性能的原因" class="headerlink" title="高性能的原因"></a>高性能的原因</h3><ul>
+<li><strong>环形数组结构</strong>：为了避免垃圾回收，采用数组而非链表。同时，数组对处理器的缓存机制更加友好。</li>
+<li><strong>无锁设计</strong>：每个生产者或者消费者线程，会通过CAS申请可以操作的元素在数组中的位置，申请到之后，直接在该位置写入或者读取数据。</li>
+<li><strong>高效的元素位置定位</strong>：数组长度2^n，通过位运算，加快定位的速度。下标采取递增的形式。不用担心 index 溢出的问题。index是long类型，即使100万QPS的处理速度，也需要30万年才能用完。</li>
+<li><strong>缓存行对齐</strong>：解决伪共享问题。</li>
+</ul>
+<h3 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h3><h4 id="写入流程"><a href="#写入流程" class="headerlink" title="写入流程"></a>写入流程</h4><p>单个生产者和多个生产者的写入流程不同</p>
+<h5 id="单生产者"><a href="#单生产者" class="headerlink" title="单生产者"></a>单生产者</h5><ol>
+<li>申请写入m个元素</li>
+<li>若是有m个元素可以入，则返回最大的序列号（主要判断是否会覆盖未读的元素）</li>
+<li>若是返回的正确，则生产者开始写入元素</li>
+</ol>
+<h5 id="多生产者"><a href="#多生产者" class="headerlink" title="多生产者"></a>多生产者</h5><p>多个生产者的情况下，会遇到“如何防止多个线程重复写同一个元素”的问题。</p>
+<p>Disruptor的解决方法是，每个线程获取不同的一段数组空间进行操作。这个通过CAS很容易达到。只需要在分配元素的时候，通过CAS判断一下这段空间是否已经分配出去即可。</p>
+<p>但是会遇到一个新问题：如何防止读取的时候，读到还未写的元素。</p>
+<p>Disruptor在多个生产者的情况下，引入了一个与Ring Buffer大小相同的buffer：Available Buffer。当某个位置写入成功的时候，便把availble Buffer相应的位置置位，标记为写入成功。读取的时候，会遍历available Buffer，来判断元素是否已经就绪。</p>
+<p>多个生产者写入的时候：</p>
+<ol>
+<li>申请写入m个元素</li>
+<li>若是有m个元素可以写入，则返回最大的序列号。每个生产者会被分配一段独享的空间</li>
+<li>生产者写入元素，写入元素的同时设置available Buffer里面相应的位置，以标记自己哪些位置是已经写入成功的</li>
+</ol>
+<h4 id="读取流程"><a href="#读取流程" class="headerlink" title="读取流程"></a>读取流程</h4><ol>
+<li>申请读取到序号n</li>
+<li>若writer cursor &gt;= n，这时仍然无法确定连续可读的最大下标。从reader cursor开始读取available Buffer，一直查到第一个不可用的元素，然后返回最大连续可读元素的位置</li>
+<li>消费者读取元素</li>
+</ol>
+<h3 id="等待策略"><a href="#等待策略" class="headerlink" title="等待策略"></a>等待策略</h3><h4 id="生产者等待策略"><a href="#生产者等待策略" class="headerlink" title="生产者等待策略"></a>生产者等待策略</h4><p>暂时只有休眠1ns</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">LockSupport.parkNanos(<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<h4 id="消费者等待策略"><a href="#消费者等待策略" class="headerlink" title="消费者等待策略"></a>消费者等待策略</h4><p>默认是：<strong>BlockingWaitStrategy</strong></p>
+<table>
+<thead>
+<tr>
+<th align="center">策略</th>
+<th align="center">措施</th>
+<th align="center">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><strong>BlockingWaitStrategy</strong></td>
+<td align="center">加锁</td>
+<td align="center">CPU资源紧缺，吞吐量和延迟并不重要的场景</td>
+</tr>
+<tr>
+<td align="center">BusySpinWaitStrategy</td>
+<td align="center">自旋</td>
+<td align="center">通过不断重试，减少切换线程导致的系统调用，而降低延迟。推荐在线程绑定到固定的CPU的场景下使用</td>
+</tr>
+<tr>
+<td align="center">PhasedBackoffWaitStrategy</td>
+<td align="center">自旋 + yield + 自定义策略</td>
+<td align="center">CPU资源紧缺，吞吐量和延迟并不重要的场景</td>
+</tr>
+<tr>
+<td align="center">SleepingWaitStrategy</td>
+<td align="center">自旋 + yield + sleep</td>
+<td align="center">性能和CPU资源之间有很好的折中。延迟不均匀</td>
+</tr>
+<tr>
+<td align="center">TimeoutBlockingWaitStrategy</td>
+<td align="center">加锁，有超时限制</td>
+<td align="center">CPU资源紧缺，吞吐量和延迟并不重要的场景</td>
+</tr>
+<tr>
+<td align="center">YieldingWaitStrategy</td>
+<td align="center">自旋 + yield + 自旋</td>
+<td align="center">性能和CPU资源之间有很好的折中。延迟比较均匀</td>
+</tr>
+</tbody></table>
+<h2 id="log4j2"><a href="#log4j2" class="headerlink" title="log4j2"></a>log4j2</h2><p>日志框架的核心思想是：使用并发队列形式，将日志缓存起来，然后开启单独的线程异步将日志写入本地磁盘。</p>
+<p>通常这个队列通常会使用 <strong>ArrayBlockingQueue</strong>（log4j2和logback都有使用）。</p>
+<p>例如 log4j2 中的 AsyncAppender：</p>
+<img src="/2021/04/08/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Disruptor/AsyncAppender.png" class="" title="AsyncAppender">
+
+<p>Log4j2中的AsyncLogger的内部使用了Disruptor框架：</p>
+<img src="/2021/04/08/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Disruptor/AsyncLogger.png" class="" title="AsyncLogger">]]></content>
+      <categories>
+        <category>java</category>
+      </categories>
+      <tags>
+        <tag>Disruptor</tag>
+        <tag>RingBuffer</tag>
       </tags>
   </entry>
 </search>
