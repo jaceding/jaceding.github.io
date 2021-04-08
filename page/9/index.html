@@ -489,7 +489,7 @@
 
       
           <p>Java 提供了一种稍弱的同步机制，即 volatile 变量，用来确保将变量的更新操作通知到其他线程。可以将 volatile 看做一个轻量级的锁，<strong>它可以保证线程可见性，防止指令重排序，但不能保证变量状态的“原子性操作”</strong>。</p>
-<h3 id="保证线程可见性"><a href="#保证线程可见性" class="headerlink" title="保证线程可见性"></a>保证线程可见性</h3><p>在下面的例子中，如果不加<strong>volatile</strong>关键字修饰flag变量，程序不会输出“end”。</p>
+<h2 id="保证线程可见性"><a href="#保证线程可见性" class="headerlink" title="保证线程可见性"></a>保证线程可见性</h2><p>在下面的例子中，如果不加<strong>volatile</strong>关键字修饰flag变量，程序不会输出“end”。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestVolatile</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> flag = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">new</span> Thread(()-&gt; &#123;</span><br><span class="line">            <span class="keyword">while</span> (flag) &#123;</span><br><span class="line">                <span class="comment">//do sth</span></span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(<span class="string">"end"</span>);</span><br><span class="line">        &#125;, <span class="string">"server"</span>).start();</span><br><span class="line"></span><br><span class="line">        Thread.sleep(<span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line">        flag = <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
@@ -673,7 +673,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">151</span>
+        <span class="site-state-item-count">154</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
