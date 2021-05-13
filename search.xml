@@ -5801,7 +5801,7 @@
 <li><strong>NOOP</strong></li>
 <li><strong>CFQ</strong>（默认）</li>
 <li><strong>DeadLine</strong></li>
-<li><strong>Anticipatory</strong></li>
+<li><strong>Anticipatory</strong>（被删除）</li>
 </ul>
 <h2 id="NOOP"><a href="#NOOP" class="headerlink" title="NOOP"></a>NOOP</h2><p>NOOP 全称 No Operation，该算法实现了最简单的 <strong>FIFO</strong> 队列，所有 IO 请求大致按照先来后到的顺序进行操作。之所以说“大致”，原因是 NOOP 在 FIFO 的基础上还做了<strong>相邻 IO 请求的合并</strong>，并不是完全按照先进先出的规则满足I/O请求。</p>
 <p>假设有如下的 IO 请求序列：</p>
@@ -5813,7 +5813,7 @@
 <h2 id="CFQ"><a href="#CFQ" class="headerlink" title="CFQ"></a>CFQ</h2><p>CFQ 全称 Completely Fair Queuing，该算法的特点是<strong>按照I/O请求的地址进行排序</strong>进行响应。</p>
 <p>CFQ 是默认的磁盘调度算法，它试图均匀地分布对 IO 带宽的访问，对于通用服务器来说是最好的选择。</p>
 <p>CFQ 为每个进程单独创建一个队列来管理该进程所产生的请求。每个进程一个队列，各队列之间的调度使用时间片进行调度，以此来保证每个进程都能被很好地分配到 IO 带宽。<strong>IO 调度器每次执行一个进程的4次请求</strong>。在传统的SAS盘上，磁盘寻道花去了绝大多数的 IO 响应时间。</p>
-<p>CFQ 的出发点是对 IO 地址进行排序，以尽量少的磁盘旋转次数来满足尽可能多的 IO 请求。在 CFQ 算法下，SAS盘的吞吐量大大提高了。相比于 NOOP 的缺点是，先来的 IO 请求并不一定能被满足，<strong>可能会出现“饿死”的情况</strong>。</p>
+<p>CFQ 的出发点是对 IO 地址进行排序，以尽量少的磁盘旋转次数来满足尽可能多的 IO 请求。在 CFQ 算法下，SAS盘的吞吐量大大提高了。相比于 NOOP 的缺点是，先来的 IO 请求并不一定能被满足，<strong>可能会出现“饿死”的情况</strong>。（这里应该说：CFQ试图均匀地分布对I/O带宽的访问，避免进程被饿死并实现较低的延迟，是deadline和as调度器的折中）</p>
 <p>假设有如下的 IO 请求序列：</p>
 <figure class="highlight basic"><table><tr><td class="code"><pre><span class="line"><span class="symbol">100 </span><span class="number">500</span> <span class="number">101</span> <span class="number">10</span> <span class="number">56</span> <span class="number">1000</span></span><br></pre></td></tr></table></figure>
 
