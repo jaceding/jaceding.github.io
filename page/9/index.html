@@ -485,7 +485,7 @@
 <ol>
 <li>确保线程互斥的访问同步代码</li>
 <li>保证共享变量的修改能够及时可见</li>
-<li>有效解决重排序问题</li>
+<li>有效解决重排序问题（synchronized 不能防止指令重排序，但满足 as-if-serial 语义）</li>
 </ol>
 <p>从语法上讲，Synchronized总共有三种用法：</p>
 <ol>
