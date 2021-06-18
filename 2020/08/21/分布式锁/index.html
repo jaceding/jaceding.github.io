@@ -20,20 +20,22 @@
     var CONFIG = {"hostname":"jaceding.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="JVM中提供的synchronized和Lock锁都是JVM级别的，也就是说synchronized和Lock只在同一Java进程内有效，当我们需要实现多个JVM进程之前的线程互斥时，我们就需要使用分布式锁了。 注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。 分布式锁特性：  互斥性：保证只有一个线程持有同一把锁。 避免死锁：锁不会被永久持有，即使服务奔溃了，也要保">
+  <meta name="description" content="JVM中提供的synchronized和Lock锁都是JVM级别的，也就是说synchronized和Lock只在同一Java进程内有效，当我们需要实现多个JVM进程之前的线程互斥时，我们就需要使用分布式锁了。 注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。在高并发环境，可以先尝试获取单机锁，如果单机锁获取失败则无需尝试获取分布式锁，避免多余的网络IO降低系统性能。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式锁">
 <meta property="og:url" content="https://jaceding.github.io/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/index.html">
 <meta property="og:site_name" content="Jace Ding">
-<meta property="og:description" content="JVM中提供的synchronized和Lock锁都是JVM级别的，也就是说synchronized和Lock只在同一Java进程内有效，当我们需要实现多个JVM进程之前的线程互斥时，我们就需要使用分布式锁了。 注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。 分布式锁特性：  互斥性：保证只有一个线程持有同一把锁。 避免死锁：锁不会被永久持有，即使服务奔溃了，也要保">
+<meta property="og:description" content="JVM中提供的synchronized和Lock锁都是JVM级别的，也就是说synchronized和Lock只在同一Java进程内有效，当我们需要实现多个JVM进程之前的线程互斥时，我们就需要使用分布式锁了。 注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。在高并发环境，可以先尝试获取单机锁，如果单机锁获取失败则无需尝试获取分布式锁，避免多余的网络IO降低系统性能。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://jaceding.github.io/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/zk%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81.png">
 <meta property="article:published_time" content="2020-08-21T01:44:15.000Z">
-<meta property="article:modified_time" content="2020-10-28T12:53:24.728Z">
+<meta property="article:modified_time" content="2021-06-18T08:05:03.425Z">
 <meta property="article:author" content="Jace Ding">
-<meta property="article:tag" content="分布式锁">
 <meta property="article:tag" content="锁">
 <meta property="article:tag" content="分布式">
+<meta property="article:tag" content="分布式锁">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jaceding.github.io/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/zk%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81.png">
 
 <link rel="canonical" href="https://jaceding.github.io/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/">
 
@@ -252,23 +254,20 @@
 
       
         <p><strong>JVM中提供的synchronized和Lock锁都是JVM级别的，也就是说synchronized和Lock只在同一Java进程内有效，当我们需要实现多个JVM进程之前的线程互斥时，我们就需要使用分布式锁了。</strong></p>
-<p>注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。</p>
-<p><strong>分布式锁特性</strong>：</p>
-<ul>
-<li>互斥性：保证只有一个线程持有同一把锁。</li>
-<li>避免死锁：锁不会被永久持有，即使服务奔溃了，也要保证锁在一定期间内会被安全释放。</li>
-<li>高可用性：除非整个分布式系统瘫痪，只要有服务存活，都允许获取和释放锁。</li>
-<li>安全性：谁上的锁由谁释放，不能被其他线程解锁。</li>
+<p>注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。在高并发环境，可以先尝试获取单机锁，如果单机锁获取失败则无需尝试获取分布式锁，避免多余的网络IO降低系统性能。如果获取单机锁成功，再尝试获取分布式锁。</p>
+<h2 id="分布式锁特性"><a href="#分布式锁特性" class="headerlink" title="分布式锁特性"></a>分布式锁特性</h2><ul>
+<li><strong>互斥性</strong>：保证只有一个线程持有同一把锁。</li>
+<li><strong>健壮性</strong>：避免死锁，锁不会被永久持有，即使服务奔溃了，也要保证锁在一定期间内会被安全释放。</li>
+<li><strong>高可用性</strong>：除非整个分布式系统瘫痪，只要有服务存活，都允许获取和释放锁。</li>
+<li><strong>安全性</strong>：谁上的锁由谁释放，不能被其他线程解锁。</li>
 </ul>
 <a id="more"></a>
 
-<h2 id="有了分布式锁，是否还需要JVM锁？"><a href="#有了分布式锁，是否还需要JVM锁？" class="headerlink" title="有了分布式锁，是否还需要JVM锁？"></a>有了分布式锁，是否还需要JVM锁？</h2><p><strong>需要，因为一般分布式锁存在网路IO，相比JVM锁性能更低</strong>。</p>
-<p>在高并发环境，可以先尝试获取单机锁，如果单机锁获取失败则无需尝试获取分布式锁，避免多余的网络IO降低系统性能。如果获取单机锁成功，再尝试获取分布式锁。</p>
 <h2 id="常见的分布式锁方案"><a href="#常见的分布式锁方案" class="headerlink" title="常见的分布式锁方案"></a>常见的分布式锁方案</h2><ol>
-<li>MySQL（性能较低，本文不过多描述）</li>
-<li>Redis</li>
-<li>Zookeeper</li>
-<li>Etcd</li>
+<li><strong>基于数据库实现</strong></li>
+<li><strong>基于Redis实现</strong></li>
+<li><strong>基于Zookeeper实现</strong></li>
+<li><strong>基于Etcd实现</strong>（<a href="https://zhuanlan.zhihu.com/p/369680338" target="_blank" rel="noopener">etcd：一款比Redis更骚的分布式锁的实现方式！用它</a>）</li>
 </ol>
 <p>根据获取分布式锁失败后的操作，可以将上述方案进行简单分类：</p>
 <ul>
@@ -277,7 +276,17 @@
 </ul>
 <p>JVM的锁获取失败，为了避免线程上下文切换，一般会进行CAS自旋，自旋到一定次数依然获取失败后线程才进入休眠状态。但分布式锁由于有网络IO，所以类CAS自旋式获取分布式锁的方式并不能提高性能，还会频繁的网络请求，Event事件一般基于长连接，开销也不小，但相对来说还是基于Event事件的方式更好些。</p>
 <p><strong>无论采用哪种方式，我们应该保证一个JVM，同时只有一个线程去尝试获取同一把分布式锁</strong>（获取分布式锁前需先获取JVM锁）。</p>
-<h2 id="Redis"><a href="#Redis" class="headerlink" title="Redis"></a>Redis</h2><h3 id="加锁"><a href="#加锁" class="headerlink" title="加锁"></a>加锁</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET key value PX NX</span><br></pre></td></tr></table></figure>
+<h3 id="基于数据库实现"><a href="#基于数据库实现" class="headerlink" title="基于数据库实现"></a>基于数据库实现</h3><h4 id="利用唯一索引"><a href="#利用唯一索引" class="headerlink" title="利用唯一索引"></a><strong>利用唯一索引</strong></h4><h5 id="加锁"><a href="#加锁" class="headerlink" title="加锁"></a>加锁</h5><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> methodLock(method_name,<span class="keyword">desc</span>) <span class="keyword">values</span> (<span class="string">'method_name'</span>,<span class="string">'desc'</span>);</span><br></pre></td></tr></table></figure>
+
+<h5 id="解锁"><a href="#解锁" class="headerlink" title="解锁"></a>解锁</h5><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> methodLock <span class="keyword">where</span> method_name =<span class="string">'method_name'</span>;</span><br></pre></td></tr></table></figure>
+
+<h5 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h5><ol>
+<li>数据库存在单点故障，会导致业务系统不可用。</li>
+<li>锁没有失效时间，一旦解锁操作失败，就会导致锁记录一直在数据库中，其他线程无法再获得到锁。</li>
+<li>锁只能是非阻塞的，因为 insert 操作一旦插入失败就会直接报错，没有获得锁的线程并不会进入排队队列，要想再次获得锁就要再次触发获得锁操作。</li>
+<li>这把锁是不可重入的，同一个线程在没有释放锁之前无法再次获得该锁。因为数据中数据已经存在了。</li>
+</ol>
+<h3 id="基于Redis实现"><a href="#基于Redis实现" class="headerlink" title="基于Redis实现"></a>基于Redis实现</h3><h4 id="加锁-1"><a href="#加锁-1" class="headerlink" title="加锁"></a>加锁</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET key value PX NX</span><br></pre></td></tr></table></figure>
 
 <p><strong>SET key value [EX seconds|PX milliseconds|KEEPTTL] [NX|XX]</strong></p>
 <ul>
@@ -289,26 +298,54 @@
 </ul>
 <p>NX可以保证只有一个线程能够获取到同一把锁（也就是只有一个线程能够SET成功）</p>
 <p>PN可以保证不会出现死锁（一段时间后，锁会自动过期）</p>
-<h3 id="发布订阅-超时后获取"><a href="#发布订阅-超时后获取" class="headerlink" title="发布订阅+超时后获取"></a>发布订阅+超时后获取</h3><p>上面分析过，采用类CAS自旋获取分布式锁的方式会导致频繁的网络请求。所以这里可以进行一定的优化。</p>
+<h4 id="发布订阅-超时后获取"><a href="#发布订阅-超时后获取" class="headerlink" title="发布订阅+超时后获取"></a>发布订阅+超时后获取</h4><p>上面分析过，采用类CAS自旋获取分布式锁的方式会导致频繁的网络请求。所以这里可以进行一定的优化。</p>
 <p>采用发布订阅的方式，释放锁时，发布锁释放消息，收到消息的JVM进程再尝试获取锁。或者一段时间（可以设置相对较长）没有收到消息，再尝试获取分布式锁（超时时间的作用是防止客户端没有发布消息）。</p>
-<h3 id="守护线程续租"><a href="#守护线程续租" class="headerlink" title="守护线程续租"></a>守护线程续租</h3><p>当业务执行的时间大于锁超时时间，无法保证只有一个线程获取同一把锁。</p>
-<p>所以在获取到锁后，在锁超时之前应该给锁进行续租（设置超时时间）。</p>
-<h3 id="解锁"><a href="#解锁" class="headerlink" title="解锁"></a>解锁</h3><p>解锁时，为了防止锁被错误的释放，应该在加上UUID进行标识。可以使用UUID+线程ID的方式来进行标识，这样就不用重复生成UUID了。所以解锁的操作就是<code>delete if exist and value = 锁标识</code>，但是Redis没有这个原子命令，所以我们需要借助Lua脚本，例如：</p>
+<h4 id="守护线程续租"><a href="#守护线程续租" class="headerlink" title="守护线程续租"></a>守护线程续租</h4><p>当业务执行的时间大于锁超时时间，无法保证只有一个线程获取同一把锁。</p>
+<p>所以在获取到锁后，在锁超时之前应该给锁进行续租（重新设置超时时间）。</p>
+<h4 id="解锁-1"><a href="#解锁-1" class="headerlink" title="解锁"></a>解锁</h4><p>解锁时，为了防止锁被错误的释放，可以加上UUID，使用UUID+线程ID的方式来进行标识（UUID只需要生成一次即可）。所以解锁的操作就是 <code>delete if exist and value = 锁标识</code>，但是Redis没有这个原子命令，需要借助Lua脚本，例如：</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (redis.call(<span class="string">'get'</span>, KEYS[<span class="number">1</span>]) == ARGV[<span class="number">1</span>]) </span><br><span class="line">    <span class="keyword">then</span></span><br><span class="line">    	<span class="keyword">return</span> redis.call(<span class="string">'del'</span>, KEYS[<span class="number">1</span>])</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    	<span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">    <span class="keyword">end</span></span><br></pre></td></tr></table></figure>
 
-<h3 id="高可用-Trade-off"><a href="#高可用-Trade-off" class="headerlink" title="高可用 Trade off"></a>高可用 Trade off</h3><p><strong>因为Redis集群的主从复制是异步的，当发生主备切换时，可能导致多个线程获取到同一把锁</strong>。</p>
-<p>这个时候要对业务进行trade off，如果可以接受极少数情况下多个线程获取到同一把锁，那可以使用集群。否者就需要：</p>
+<h4 id="高可用-Trade-off"><a href="#高可用-Trade-off" class="headerlink" title="高可用 Trade off"></a>高可用 Trade off</h4><p><strong>因为Redis集群的主从复制是异步的，当发生主备切换时，可能导致多个线程获取到同一把锁</strong>。</p>
+<p>这个时候就要进行 trade off，如果可以接受极少数情况下多个线程获取到同一把锁，那可以使用集群。否者就需要：</p>
 <ol>
-<li>Redis单点，使用安全级别更高的服务器部署Redis单点服务</li>
-<li>多个Redis集群，使用RedLock算法</li>
+<li>Redis 使用单点，使用安全级别更高的服务器部署Redis单点服务</li>
+<li>多个Redis集群，使用 RedLock 算法</li>
 </ol>
-<h2 id="Zookeeper"><a href="#Zookeeper" class="headerlink" title="Zookeeper"></a>Zookeeper</h2><h3 id="加锁-1"><a href="#加锁-1" class="headerlink" title="加锁"></a>加锁</h3><p>创建临时节点，谁创建成功谁获取到锁。</p>
-<h3 id="Watch监控"><a href="#Watch监控" class="headerlink" title="Watch监控"></a>Watch监控</h3><p>获取失败后，监控该节点的事件，收到事件后，再尝试获取锁。</p>
-<h3 id="释放锁"><a href="#释放锁" class="headerlink" title="释放锁"></a>释放锁</h3><p>断开连接后临时节点会被自动删除。</p>
-<h2 id="相关资料"><a href="#相关资料" class="headerlink" title="相关资料"></a>相关资料</h2><ol>
-<li><a href="https://mp.weixin.qq.com/s/gOYWLg3xYt4OhS46woN_Lg" target="_blank" rel="noopener">Redis锁从面试连环炮聊到神仙打架</a></li>
-<li><a href="http://redis.cn/topics/distlock.html" target="_blank" rel="noopener">Redis官网-分布式锁</a></li>
+<h4 id="RedLock"><a href="#RedLock" class="headerlink" title="RedLock"></a>RedLock</h4><p><strong>在 Redis 的分布式环境中，我们假设有 N 个 Redis Master。这些节点完全互相独立，不存在主从复制或者其他集群协调机制。</strong><a href="https://redis.io/topics/distlock" target="_blank" rel="noopener">官网文档</a></p>
+<p>现在假设有 5 个完全独立的 Redis Master 节点，他们分别运行在 5 台服务器中，可以基本可以保证他们不会同时宕机。一个客户端加锁/解锁，必须经过以下的五个步骤：</p>
+<ol>
+<li>获取当前 Unix 时间，以毫秒为单位。</li>
+<li>依次尝试从 5 个实例，使用相同的 key 和随机值获取锁。（向Redis请求获取锁时，客户端应该设置一个网络连接和响应超时时间，这个超时时间应该小于锁的失效时间，这样可以避免客户端死等）</li>
+<li>客户端使用当前时间减去开始获取锁时间（步骤 1 记录的时间）就得到获取锁使用的时间。当且仅当从大多数（这里是 3 个节点）的 Redis 节点都取到锁，并且使用的时间小于锁失效时间时，锁才算获取成功。</li>
+<li>如果取到了锁，key 的真正有效时间等于有效时间减去获取锁所使用的时间（步骤 3 计算的结果）</li>
+<li>如果因为某些原因，获取锁失败（没有在至少 N/2+1 个Redis实例取到锁或者取锁时间已经超过了有效时间），客户端应该在所有的 Redis 实例上进行解锁（即便某些 Redis 实例根本就没有加锁成功）。</li>
 </ol>
+<p>为了进一步保证互斥性，假设步骤1的时间为T1，步骤3的时间为T2，锁的有效时间为TTL，那么锁的真正有效时间应该为：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">MIN_VALIDITY</span>=TTL-(T2-T1)-CLOCK_DRIFT</span><br></pre></td></tr></table></figure>
+
+<p>CLOCK_DRIFT：是指时钟漂移的误差值，通常是一个经验值。</p>
+<p>更多资料：</p>
+<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/113382277" target="_blank" rel="noopener">Redis锁从面试连环炮聊到神仙打架</a></li>
+<li><a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html" target="_blank" rel="noopener">How to do distributed locking</a></li>
+</ol>
+<h3 id="基于Zookeeper实现"><a href="#基于Zookeeper实现" class="headerlink" title="基于Zookeeper实现"></a>基于Zookeeper实现</h3><h4 id="利用临时节点实现"><a href="#利用临时节点实现" class="headerlink" title="利用临时节点实现"></a>利用临时节点实现</h4><h5 id="加锁-2"><a href="#加锁-2" class="headerlink" title="加锁"></a>加锁</h5><p>创建临时节点，谁创建成功谁获取到锁。</p>
+<p><strong>Watch监控</strong></p>
+<p>获取失败后，监控该节点的事件，收到事件后，再尝试获取锁。</p>
+<h5 id="解锁-2"><a href="#解锁-2" class="headerlink" title="解锁"></a>解锁</h5><p>断开连接后临时节点会被自动删除。</p>
+<h5 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h5><p>这种方式实现的是<strong>非公平锁</strong>，但存在<strong>惊群效应</strong>，一般不会考虑。</p>
+<h4 id="利用临时顺序节点实现"><a href="#利用临时顺序节点实现" class="headerlink" title="利用临时顺序节点实现"></a>利用临时顺序节点实现</h4><p>流程图如下：</p>
+<p><img src="./%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/zk%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81.png" alt="zk分布式锁"></p>
+<h5 id="加锁-3"><a href="#加锁-3" class="headerlink" title="加锁"></a>加锁</h5><p>创建临时顺序节点，排序后如果自己是自小节点则可以获取锁。</p>
+<p>否则监控上一个节点，上一个节点删除后，再排序判断自己是否为最小节点直到获取锁成功。</p>
+<h5 id="解锁-3"><a href="#解锁-3" class="headerlink" title="解锁"></a>解锁</h5><p>断开连接后临时节点会被自动删除。</p>
+<h5 id="小结-2"><a href="#小结-2" class="headerlink" title="小结"></a>小结</h5><p>这种方式实现的是<strong>公平锁</strong>，zk分布式锁一般都是实现的这种方式。</p>
+<p>但<strong>基于Zookeeper实现的分布式锁也不是完全可靠</strong>，例如：客户端A获取到锁之后，由于网络抖动，客户端和ZK集群的session连接断开了，ZK会以为客户端挂了并删除临时节点，这个时候其他客户端就可以获取到分布式锁了。但这种问题并不常见，因为一般Zookeeper的客户端都有重试机制。</p>
+<h3 id="小结-3"><a href="#小结-3" class="headerlink" title="小结"></a>小结</h3><p>上面几种方式，哪种方式都无法做到完美。就像CAP一样，在复杂性、可靠性、性能等方面无法同时满足，所以要根据不同的应用场景选择最适合的方案。</p>
+<ul>
+<li><strong>从性能角度比较：Redis &gt; Zookeeper &gt; 数据库</strong></li>
+<li><strong>从可靠性角度比较：数据库 &gt; Zookeeper &gt;= Redis</strong></li>
+</ul>
 
     </div>
 
@@ -338,9 +375,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag"># 分布式锁</a>
               <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
               <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag"># 分布式</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag"># 分布式锁</a>
           </div>
 
         
@@ -414,7 +451,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#有了分布式锁，是否还需要JVM锁？"><span class="nav-number">1.</span> <span class="nav-text">有了分布式锁，是否还需要JVM锁？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常见的分布式锁方案"><span class="nav-number">2.</span> <span class="nav-text">常见的分布式锁方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis"><span class="nav-number">3.</span> <span class="nav-text">Redis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#加锁"><span class="nav-number">3.1.</span> <span class="nav-text">加锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#发布订阅-超时后获取"><span class="nav-number">3.2.</span> <span class="nav-text">发布订阅+超时后获取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#守护线程续租"><span class="nav-number">3.3.</span> <span class="nav-text">守护线程续租</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解锁"><span class="nav-number">3.4.</span> <span class="nav-text">解锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#高可用-Trade-off"><span class="nav-number">3.5.</span> <span class="nav-text">高可用 Trade off</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zookeeper"><span class="nav-number">4.</span> <span class="nav-text">Zookeeper</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#加锁-1"><span class="nav-number">4.1.</span> <span class="nav-text">加锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Watch监控"><span class="nav-number">4.2.</span> <span class="nav-text">Watch监控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#释放锁"><span class="nav-number">4.3.</span> <span class="nav-text">释放锁</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#相关资料"><span class="nav-number">5.</span> <span class="nav-text">相关资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#分布式锁特性"><span class="nav-number">1.</span> <span class="nav-text">分布式锁特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常见的分布式锁方案"><span class="nav-number">2.</span> <span class="nav-text">常见的分布式锁方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基于数据库实现"><span class="nav-number">2.1.</span> <span class="nav-text">基于数据库实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#利用唯一索引"><span class="nav-number">2.1.1.</span> <span class="nav-text">利用唯一索引</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#加锁"><span class="nav-number">2.1.1.1.</span> <span class="nav-text">加锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#解锁"><span class="nav-number">2.1.1.2.</span> <span class="nav-text">解锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#小结"><span class="nav-number">2.1.1.3.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于Redis实现"><span class="nav-number">2.2.</span> <span class="nav-text">基于Redis实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#加锁-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">加锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#发布订阅-超时后获取"><span class="nav-number">2.2.2.</span> <span class="nav-text">发布订阅+超时后获取</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#守护线程续租"><span class="nav-number">2.2.3.</span> <span class="nav-text">守护线程续租</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解锁-1"><span class="nav-number">2.2.4.</span> <span class="nav-text">解锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#高可用-Trade-off"><span class="nav-number">2.2.5.</span> <span class="nav-text">高可用 Trade off</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RedLock"><span class="nav-number">2.2.6.</span> <span class="nav-text">RedLock</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于Zookeeper实现"><span class="nav-number">2.3.</span> <span class="nav-text">基于Zookeeper实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#利用临时节点实现"><span class="nav-number">2.3.1.</span> <span class="nav-text">利用临时节点实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#加锁-2"><span class="nav-number">2.3.1.1.</span> <span class="nav-text">加锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#解锁-2"><span class="nav-number">2.3.1.2.</span> <span class="nav-text">解锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#小结-1"><span class="nav-number">2.3.1.3.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#利用临时顺序节点实现"><span class="nav-number">2.3.2.</span> <span class="nav-text">利用临时顺序节点实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#加锁-3"><span class="nav-number">2.3.2.1.</span> <span class="nav-text">加锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#解锁-3"><span class="nav-number">2.3.2.2.</span> <span class="nav-text">解锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#小结-2"><span class="nav-number">2.3.2.3.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结-3"><span class="nav-number">2.4.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -430,7 +467,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

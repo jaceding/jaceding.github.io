@@ -552,13 +552,12 @@
 
       
           <p><strong>JVM中提供的synchronized和Lock锁都是JVM级别的，也就是说synchronized和Lock只在同一Java进程内有效，当我们需要实现多个JVM进程之前的线程互斥时，我们就需要使用分布式锁了。</strong></p>
-<p>注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。</p>
-<p><strong>分布式锁特性</strong>：</p>
-<ul>
-<li>互斥性：保证只有一个线程持有同一把锁。</li>
-<li>避免死锁：锁不会被永久持有，即使服务奔溃了，也要保证锁在一定期间内会被安全释放。</li>
-<li>高可用性：除非整个分布式系统瘫痪，只要有服务存活，都允许获取和释放锁。</li>
-<li>安全性：谁上的锁由谁释放，不能被其他线程解锁。</li>
+<p>注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。在高并发环境，可以先尝试获取单机锁，如果单机锁获取失败则无需尝试获取分布式锁，避免多余的网络IO降低系统性能。如果获取单机锁成功，再尝试获取分布式锁。</p>
+<h2 id="分布式锁特性"><a href="#分布式锁特性" class="headerlink" title="分布式锁特性"></a>分布式锁特性</h2><ul>
+<li><strong>互斥性</strong>：保证只有一个线程持有同一把锁。</li>
+<li><strong>健壮性</strong>：避免死锁，锁不会被永久持有，即使服务奔溃了，也要保证锁在一定期间内会被安全释放。</li>
+<li><strong>高可用性</strong>：除非整个分布式系统瘫痪，只要有服务存活，都允许获取和释放锁。</li>
+<li><strong>安全性</strong>：谁上的锁由谁释放，不能被其他线程解锁。</li>
 </ul>
           <!--noindex-->
             <div class="post-button">
@@ -653,7 +652,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
