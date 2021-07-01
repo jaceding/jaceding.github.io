@@ -200,6 +200,170 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/05/13/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Synchronized/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/13/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Synchronized/" class="post-title-link" itemprop="url">深入理解Synchronized</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-13 11:21:54" itemprop="dateCreated datePublished" datetime="2020-05-13T11:21:54+08:00">2020-05-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>Synchronized是Java中解决并发问题的一种最常用的方法，也是最简单的一种方法。</strong></p>
+<p>Synchronized的作用主要有三个：</p>
+<ol>
+<li>确保线程互斥的访问同步代码</li>
+<li>保证共享变量的修改能够及时可见</li>
+<li>有效解决重排序问题（synchronized 不能防止指令重排序，但满足 as-if-serial 语义）</li>
+</ol>
+<p>从语法上讲，Synchronized总共有三种用法：</p>
+<ol>
+<li>修饰普通方法</li>
+<li>修饰静态方法</li>
+<li>修饰代码块</li>
+</ol>
+<p>Synchronized在JDK1.6后的优化，主要包括了<strong>自适应自旋锁、锁消除、锁粗化、轻量级锁和偏向锁</strong></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/05/13/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Synchronized/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/05/13/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CAS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/13/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CAS/" class="post-title-link" itemprop="url">深入理解CAS</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-13 10:01:40" itemprop="dateCreated datePublished" datetime="2020-05-13T10:01:40+08:00">2020-05-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>CAS (Compare-And-Swap)  是一种无锁的非阻塞算法的实现</strong>。CAS 包含了 3 个操作数：1. 需要读写的内存值 V，2. 进行比较的值 A 3. 拟写入的新值 B。当且仅当 V 的值等于 A 时，CAS 通过原子方式用新值 B 来更新 V 的值，否则不会执行任何操作。</p>
+<p>CAS也是一种硬件对并发的支持，针对多处理器操作而设计的处理器中的一种特殊指令，用于管理对共享数据的并发访问。</p>
+<p>Java中 AtomicBoolean、AtomicInteger、AtomicLong 和 AtomicReference 的实例各自提供对相应类型单个变量的访问和更新。每个类也为该类型提供适当的实用工具方法。</p>
+<p>AtomicIntegerArray、AtomicLongArray 和 AtomicReferenceArray 类进一步扩展了原子操作，对这些类型的数组提供了支持。这些类在为其数组元素提供 volatile 访问语义方 面也引人注目，这对于普通数组来说是不受支持的。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/05/13/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CAS/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/05/11/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3volatile/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -422,160 +586,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/04/02/CentOS7%E5%AE%89%E8%A3%85python3%E7%8E%AF%E5%A2%83/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Jace Ding">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jace Ding">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/04/02/CentOS7%E5%AE%89%E8%A3%85python3%E7%8E%AF%E5%A2%83/" class="post-title-link" itemprop="url">CentOS7安装python3环境</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-02 19:43:05" itemprop="dateCreated datePublished" datetime="2020-04-02T19:43:05+08:00">2020-04-02</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/" itemprop="url" rel="index"><span itemprop="name">环境搭建</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="环境说明："><a href="#环境说明：" class="headerlink" title="环境说明："></a>环境说明：</h3><p>系统：Centos 7<br>Python安装包版本：Python-3.7.5.tgz 官网：<a href="https://www.python.org/downloads/source/" target="_blank" rel="noopener">https://www.python.org/downloads/source/</a></p>
-<h3 id="安装开发环境、及相关依赖"><a href="#安装开发环境、及相关依赖" class="headerlink" title="安装开发环境、及相关依赖"></a>安装开发环境、及相关依赖</h3><p><strong>Development tools</strong>这是一个可以给开发编译运维的配置基本初始环境的工具。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo yum -y groupinstall "Development tools"</span><br><span class="line">sudo yum -y install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel libffi-devel</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/04/02/CentOS7%E5%AE%89%E8%A3%85python3%E7%8E%AF%E5%A2%83/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/03/12/%E6%8C%89%E6%97%B6%E9%97%B4%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Jace Ding">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jace Ding">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/03/12/%E6%8C%89%E6%97%B6%E9%97%B4%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97/" class="post-title-link" itemprop="url">按时间查询日志</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-12 16:37:19" itemprop="dateCreated datePublished" datetime="2020-03-12T16:37:19+08:00">2020-03-12</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Tips/" itemprop="url" rel="index"><span itemprop="name">Tips</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>查询日志时，经常需要指定条件查询。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/03/12/%E6%8C%89%E6%97%B6%E9%97%B4%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/9/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/9/">9</a><span class="page-number current">10</span><a class="page-number" href="/page/11/">11</a><a class="extend next" rel="next" href="/page/11/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/9/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/9/">9</a><span class="page-number current">10</span><a class="page-number" href="/page/11/">11</a><a class="page-number" href="/page/12/">12</a><a class="extend next" rel="next" href="/page/11/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -643,7 +657,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">56</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -656,7 +670,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">157</span>
+        <span class="site-state-item-count">162</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

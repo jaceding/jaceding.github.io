@@ -6740,4 +6740,608 @@
         <tag>内存管理</tag>
       </tags>
   </entry>
+  <entry>
+    <title>分布式事务</title>
+    <url>/2021/06/23/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/</url>
+    <content><![CDATA[<p>在微服务环境下，服务与服务之间通讯采用 <code>RPC</code> 远程调用技术，但是每个服务中都有自己独立的数据源，即自己 <code>独立的本地事务</code>。两个服务相互通讯的时候，两个本地事务互不影响，从而出现分布式事务产生的原因。</p>
+<p>在传统项目大部分情况下，不会产生分布式事务，但是在项目中如果采用多数据源方式，也会产生分布式事务。</p>
+<a id="more"></a>
+
+<h2 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h2><p>事务指的是满足 ACID 特性的一组操作，可以通过 Commit 提交一个事务，也可以使用 Rollback 进行回滚。</p>
+<h3 id="ACID"><a href="#ACID" class="headerlink" title="ACID"></a>ACID</h3><p>事务具有4个特征，分别是<strong>原子性</strong>、<strong>一致性</strong>、<strong>隔离性</strong>和<strong>持久性</strong>，简称事务的ACID特性。</p>
+<ol>
+<li><p><strong>原子性（Atomicity）</strong></p>
+<p>事务被视为不可分割的最小单元，事务中的操作要么全部提交成功，要么全部失败回滚。</p>
+</li>
+<li><p><strong>一致性（Consistency）</strong></p>
+<p>事务的执行不能破坏数据库数据的完整性和一致性，数据库在事务执行前后都保持一致性状态。</p>
+</li>
+<li><p><strong>隔离性（Isolation）</strong></p>
+<p>事务的隔离性是指在并发环境中，并发的事务时相互隔离的，一个事务的执行不能被其他事务干扰。</p>
+</li>
+<li><p><strong>持久性（Durability）</strong></p>
+<p>一旦事务提交，则其所做的修改将会永远保存到数据库中。即使系统发生崩溃，事务执行的结果也不能丢失。</p>
+</li>
+</ol>
+<p>事务的 ACID 特性概念简单，但不是很好理解，主要是因为这几个特性不是一种平级关系：</p>
+<ol>
+<li>事务满足持久化是为了能应对系统重启、崩溃的情况。</li>
+<li>只有满足一致性，事务的执行结果才是正确的，换句话说：原子性和隔离性是为了实现一致性。</li>
+<li>在无并发的情况下，事务串行执行，隔离性一定能够满足。此时只要能满足原子性，就一定能满足一致性。</li>
+<li>在并发的情况下，多个事务并行执行，事务不仅要满足原子性，还需要满足隔离性，才能满足一致性。</li>
+</ol>
+<p>ACID的实现：</p>
+<ol>
+<li>通过 <strong>undo log</strong> 保证原子性</li>
+<li>通过 <strong>redo log</strong> 保证持久性</li>
+<li>通过<strong>封锁</strong>和<strong>MVCC机制</strong>保证隔离性</li>
+<li>通过<strong>原子性+持久性+隔离性</strong>来保证一致性</li>
+</ol>
+<h2 id="CAP-定理"><a href="#CAP-定理" class="headerlink" title="CAP 定理"></a>CAP 定理</h2><p>一个分布式系统最多只能同时满足<strong>一致性（Consistency）</strong>、<strong>可用性（Availability）</strong>和<strong>分区容错性（Partition tolerance）</strong>这三项中的两项。</p>
+<img src="/2021/06/23/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/CAP.jpg" class="" title="CAP">
+
+<h3 id="一致性（Consistency）"><a href="#一致性（Consistency）" class="headerlink" title="一致性（Consistency）"></a>一致性（Consistency）</h3><p>一致性是指多个数据副本之间能够保持一致的特性（强一致性）。</p>
+<p>从客户端角度，多进程并发访问时，更新过的数据在不同进程如何获取的不同策略，分为不同的一致性：</p>
+<ol>
+<li><strong>强一致性：</strong>要求更新过的数据能被后续的访问都能看到，则是强一致性。</li>
+<li><strong>弱一致性：</strong>能容忍后续的部分或者全部访问不到，则是弱一致性。</li>
+<li><strong>最终一致性</strong>：经过一段时间后要求能访问到更新后的数据，则是最终一致性。</li>
+</ol>
+<h3 id="可用性（Availability）"><a href="#可用性（Availability）" class="headerlink" title="可用性（Availability）"></a>可用性（Availability）</h3><p>可用性是指系统提供的服务一直处于可用状态，每次请求都能获取到非错的响应。</p>
+<h3 id="分区容错性（Partition-tolerance）"><a href="#分区容错性（Partition-tolerance）" class="headerlink" title="分区容错性（Partition tolerance）"></a>分区容错性（Partition tolerance）</h3><p>分区容错性是指分布式系统在遇到某节点或网络分区故障的时候，仍然能够对外提供满足一致性或可用性的服务。</p>
+<h3 id="CAP论证"><a href="#CAP论证" class="headerlink" title="CAP论证"></a>CAP论证</h3><p>假设存在有一个分布式系统：有两个节点N1、N2，它们分别连接数据库D1 和 D2。</p>
+<p>如果客户端向节点 N1 请求更新数据，N1 更新完数据后需要向 N2 进行同步操作，如果此时正好发生网络分区，也就是说 N1 和 N2 网络不通，如果要支持这种异常，也就是系统仍能对外提供服务，相当于要满足分区容错性，那是否能满足一致性和可用性呢？这里有两种选择：</p>
+<ol>
+<li>牺牲数据一致性，保证系统可用性，响应更新成功给客户端。</li>
+<li>牺牲系统可用性，保证数据一致性，阻塞等待网络连通或返回错误信息给客户端。</li>
+</ol>
+<p>在分布式系统中，通常分区容错性必须得保证，只能在一致性和可用性做出权衡。</p>
+<h3 id="CAP权衡"><a href="#CAP权衡" class="headerlink" title="CAP权衡"></a>CAP权衡</h3><p>通过 CAP 定理，我们知道无法同时满足一致性、可用性和分区容错性这三个特性，但分区容错性是前提，所以只能从一致性和可用性进行抉择：</p>
+<ul>
+<li><strong>CP</strong>：如果不要求可用性，相当于每个请求都需要在Server之间强一致，而网络分区会导致同步时间无限延长，如此CP也是可以保证的。很多传统的数据库分布式事务都属于这种模式。</li>
+<li><strong>AP</strong>：如果要求高可用并允许分区，则需放弃一致性。一旦分区发生，节点之间可能会失去联系，为了高可用，每个节点只能用本地数据提供服务，而这样会导致全局数据的不一致性。</li>
+</ul>
+<h2 id="Base-理论"><a href="#Base-理论" class="headerlink" title="Base 理论"></a>Base 理论</h2><p>BASE 理论是<strong>基本可用（Basically Available），软状态（Soft State）和最终一致性（Eventually Consistent）</strong>三个短语的缩写。</p>
+<p>BASE 理论是对 CAP 中 AP 的一个扩展，其核心思想是：<strong>即使无法做到强一致性，但可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性</strong>。</p>
+<h3 id="基本可用"><a href="#基本可用" class="headerlink" title="基本可用"></a>基本可用</h3><p><strong>基本可用是指分布式系统在出现不可预知故障的时候，允许损失部分可用性。</strong>例如：</p>
+<ul>
+<li>响应时间上的损失：正常情况下的搜索引擎0.5秒即返回给用户结果，但由于出现故障，查询结果的响应时间增加到 1 ~ 2 秒。</li>
+<li>功能上的损失：在一个电商网站上，正常情况下，用户可以顺利完成每一笔订单。但是到了大促期间，为了保护购物系统的稳定性，部分消费者可能会被引导到一个降级页面。</li>
+</ul>
+<h3 id="软状态"><a href="#软状态" class="headerlink" title="软状态"></a>软状态</h3><p><strong>软状态是指允许系统中的数据存在中间状态，并认为该状态不影响系统的整体可用性，即允许系统在多个不同节点的数据副本存在数据延时。</strong></p>
+<h3 id="最终一致性"><a href="#最终一致性" class="headerlink" title="最终一致性"></a>最终一致性</h3><p><strong>最终一致性强调的是系统中所有的数据副本，在经过一段时间的同步后，最终能够达成一致的状态。因此，最终一致性的本质是需要系统保证最终数据能够达成一致，而不需要实时保证数据的强一致性。</strong></p>
+<p>最终一致性是一种特殊的弱一致性，经过一段时间后达成一致，这个时间期限取决于网络延时、系统负载、数据复制方案设计等等因素。</p>
+<p>在实际工程实践中，最终一致性大致分为5种：</p>
+<ol>
+<li><p>因果一致性（Causal consistency）：</p>
+<p>如果节点 A 在更新完某个数据后通知了节点 B，那么节点 B 之后对该数据的访问和修改都是基于 A 更新后的值，即不能发生丢失更新情况。而与节点 A 无因果关系的节点 C 的数据访问则没有这样的限制。</p>
+</li>
+<li><p>读己之所写（Read your writes）</p>
+<p>节点 A 更新一个数据后，它自身总是能访问到自身更新过的最新值，而不是旧值。这也算一种因果一致性。</p>
+</li>
+<li><p>会话一致性（Session consistency）</p>
+<p>将对系统数据的访问过程框定在了一个会话当中：系统能保证在同一个有效的会话中实现 “读己之所写” 的一致性，也就是说，执行更新操作之后，客户端能够在同一个会话中始终读取到该数据项的最新值。</p>
+</li>
+<li><p>单调读一致性（Monotonic read consistency）</p>
+<p>如果一个节点从系统中读取出一个数据项的某个值后，那么系统对于该节点后续的任何数据访问都不应该返回更旧的值。</p>
+</li>
+<li><p>单调写一致性（Monotonic write consistency）</p>
+<p>一个系统要能够保证来自同一个节点的写操作被顺序的执行。</p>
+</li>
+</ol>
+<p>在实际的实践中，这5种系统往往会结合使用，以构建一个具有最终一致性的分布式系统。</p>
+<h2 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><ul>
+<li>传统项目中包含多个数据源</li>
+<li>微服务项目中每个服务都有自己的数据源，服务之间通过 RPC 远程调用</li>
+</ul>
+<h3 id="刚性事务"><a href="#刚性事务" class="headerlink" title="刚性事务"></a>刚性事务</h3><p><strong>刚性事务遵循 ACID 理论，满足强一致性。</strong></p>
+<h4 id="XA"><a href="#XA" class="headerlink" title="XA"></a>XA</h4><p>XA规范是 X/Open CAE Specification 定义的一套DTP（Distributed Transaction Processing）分布式事务处理模型，主要包含四个部分：</p>
+<ol>
+<li>应用程序（AP）：应用程序</li>
+<li>事务管理器（TM）：事务组件</li>
+<li>资源管理器（RM）：数据库</li>
+<li>通信资源管理器（CRM）：消息中间件</li>
+</ol>
+<p>事务管理器作为一个全局的调度者，负责通知各个资源管理器事务的开始、结束、提交、回滚，把多个本地事务协调为全局统一的分布式事务。</p>
+<p>两阶段提交（2PC）和三阶段提交（3PC）就是基于此规范衍生出来的。</p>
+<p>Oracle、Mysql等数据库均已实现了XA接口。</p>
+<h5 id="MySQL-XA"><a href="#MySQL-XA" class="headerlink" title="MySQL XA"></a>MySQL XA</h5><p>MySQL 从 5.0 开始引入 <a href="https://dev.mysql.com/doc/refman/8.0/en/xa.html" target="_blank" rel="noopener">MySQL XA</a>，InnoDB 存储引擎支持 XA 分布式事务，MySQL 服务器的 XA 接口由以<code>XA</code>关键字开头的 SQL 语句组成。</p>
+<h4 id="2PC"><a href="#2PC" class="headerlink" title="2PC"></a>2PC</h4><p>2PC 是为了使分布式系统的所有节点在进行事务过程中能够保持原子性和一致性而设计的算法。通常，2PC也被认为是一种一致性协议，用来保证分布式系统中的数据一致性。</p>
+<p>大概思路：每个参与者将操作成败通知协调者，再由协调者根据所有参与者的反馈情报，决定各参与者是否要提交操作还是中止操作。</p>
+<p>二阶段提交的两个阶段：</p>
+<ul>
+<li>第一阶段：<strong>提交事务请求（也叫投票阶段，各参与者投票表明是否要继续执行接下来的事务提交操作）</strong></li>
+<li>第二阶段：<strong>执行事务提交（也叫提交阶段，根据参与者的反馈情况决定最终是否可以进行事务提交操作）</strong></li>
+</ul>
+<h5 id="投票阶段"><a href="#投票阶段" class="headerlink" title="投票阶段"></a>投票阶段</h5><p>投票阶段流程如下：</p>
+<ol>
+<li><p><strong>事务询问</strong></p>
+<p>协调者向所有的参与者发送事务内容，询问是否可以执行事务提交操作，并开始等待各参与者的响应。</p>
+</li>
+<li><p><strong>执行事务</strong></p>
+<p>各参与者节点执行事务操作，并将 undo 和 redo 信息记入事务日志中。</p>
+</li>
+<li><p><strong>各参与者向协调者反馈事务询问的响应</strong></p>
+<p>如果参与者成功执行了事务，则反馈给协调者 Yes 响应，表示事务可以执行，如果参与者没有执行成功，则反馈 No 响应，表示事务不可以执行。</p>
+</li>
+</ol>
+<h5 id="提交阶段"><a href="#提交阶段" class="headerlink" title="提交阶段"></a>提交阶段</h5><p>根据参与者的反馈情况决定最终是否可以进行事务提交操作，有两种可能：</p>
+<h6 id="执行事务提交"><a href="#执行事务提交" class="headerlink" title="执行事务提交"></a>执行事务提交</h6><p>如果所有参与者的反馈都是Yes，那么就会执行事务提交。执行事务提交流程如下：</p>
+<ol>
+<li><p><strong>发送提交请求</strong></p>
+<p>协调者向所有参与者发送 commit 请求。</p>
+</li>
+<li><p><strong>事务提交</strong></p>
+<p>参与者接收到 commit 请求后，会正式执行事务提交操作，并在完成提交后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务提交结果</strong></p>
+<p>参与者完成提交事务之后，向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>完成事务</strong></p>
+<p>协调者接收到所有参与者反馈的 Ack 消息后，完成事务。</p>
+</li>
+</ol>
+<h6 id="中断事务"><a href="#中断事务" class="headerlink" title="中断事务"></a>中断事务</h6><p>如果任何一个参与者的反馈是No，或者在等待超时之后，协调者没有收到所有参与者的响应，那么就会中断事务。中断事务流程如下：</p>
+<ol>
+<li><p><strong>发送回滚请求</strong></p>
+<p>协调者向所有参与者发送 Rollback 请求。</p>
+</li>
+<li><p><strong>事务回滚</strong></p>
+<p>参与者接收到 Rollback 请求后，会利用其在一阶段中记录的 undo 信息来执行事务回滚操作，并在完成回滚后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务回滚结果</strong></p>
+<p>参与者完成事务回滚之后，向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>完成中断事务</strong></p>
+<p>协调者接收到所有参与者反馈的 Ack 消息后，完成中断事务。</p>
+</li>
+</ol>
+<h5 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h5><p>优点：</p>
+<ol>
+<li><strong>原理简单，实现方便。</strong></li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li><p><strong>同步阻塞</strong></p>
+<p>在二阶段提交的过程中，所有参与该事务操作的逻辑都处于阻塞状态，也就是说，各个参与者在等待其他参与者响应的过程中，将无法进行其他操作。这种同步阻塞极大的限制了分布式系统的性能。</p>
+</li>
+<li><p><strong>单点问题</strong></p>
+<p>一旦协调者出现问题，整个二阶段提交流程将无法运转，更为严重的是，参与者将会一直处在锁定事务资源的状态中，而无法继续完成事务操作。所有参与者必须等待协调者重新上线后才能工作。</p>
+</li>
+<li><p><strong>数据不一致</strong></p>
+<p>在提交阶段中，当协调者向参与者发送 commit 请求之后，发生了局部网络异常或者在发送 commit 请求过程中协调者发生了故障，这会导致只有部分参与者接受到了commit 请求。这样整个分布式系统便出现了数据不一致性的现象。</p>
+</li>
+<li><p><strong>容错性不好</strong></p>
+<p>如果在二阶段提交的提交阶段，参与者出现故障，导致协调者始终无法获取到所有参与者的确认信息，这时协调者只能依靠其自身的超时机制，判断是否需要中断事务。显然，这种策略过于保守。换句话说，二阶段提交协议没有设计较为完善的容错机制，任意一个节点是失败都会导致整个事务的失败。</p>
+</li>
+</ol>
+<h4 id="3PC"><a href="#3PC" class="headerlink" title="3PC"></a>3PC</h4><p>二阶段提交存在诸多缺点，因此研究者在二阶段提交协议的基础上进行了改进，提出了三阶段提交协议。</p>
+<p>与两阶段提交不同的是，三阶段提交有两个改动点：</p>
+<ol>
+<li><strong>引入超时机制（2PC只有协调者有超时机制）</strong></li>
+<li><strong>将 2PC 的投票阶段一分为二，这样 3PC 就有 CanCommit、PreCommit、DoCommit 阶段</strong></li>
+</ol>
+<p>引入 CanCommit 阶段，主要是进一步降低阻塞范围，因为在执行事务后，就会占用事务资源。2PC 没有CanCommit 阶段，那么就一定会占用事务资源（占用事务资源意味着可能导致阻塞）。换句话说，如果在占用事务资源之前，就能先判断事务是否执行成功，那么这样可以避免一些不必要的阻塞。</p>
+<h5 id="CanCommit"><a href="#CanCommit" class="headerlink" title="CanCommit"></a>CanCommit</h5><p>CanCommit 流程如下：</p>
+<ol>
+<li><p><strong>事务询问</strong></p>
+<p>协调者向所有参与者发送一个包含事务内容的 CanCommit 请求，询问是否可以执行事务提交操作，并开始等待个参与者响应。</p>
+</li>
+<li><p><strong>各参与者向协调者反馈事务询问的响应</strong></p>
+<p>参与者在接收到协调者的 CanCommit 请求后，如果认为自身能够顺利执行事务，则响应 Yes 并进入预备状态，否则响应 No。</p>
+</li>
+</ol>
+<h5 id="PreCommit"><a href="#PreCommit" class="headerlink" title="PreCommit"></a>PreCommit</h5><p>根据参与者的反馈情况决定最终是否可以进行 PreCommit 操作，有两种可能：</p>
+<h6 id="执行事务预提交"><a href="#执行事务预提交" class="headerlink" title="执行事务预提交"></a>执行事务预提交</h6><p>如果阶段一所有参与者的反馈都是 Yes，那么就会执行事务预提交。执行事务预提交流程如下：</p>
+<ol>
+<li><p><strong>发送预提交请求</strong></p>
+<p>协调者向所有参与者发送 PreCommit 请求，并进入 Prepared 阶段。</p>
+</li>
+<li><p><strong>事务预提交</strong></p>
+<p>各参与者接收到 PreCommit 请求后，执行事务操作，并将 undo 和 redo 信息记入事务日志中。</p>
+</li>
+<li><p><strong>各参与者向协调者反馈事务执行的响应</strong></p>
+<p>如果参与者成功执行了事务操作，那么就会反馈给协调者 Ack 响应，同时等待最终的指令：提交（commit）或中止（abort）。</p>
+</li>
+</ol>
+<h6 id="中断事务-1"><a href="#中断事务-1" class="headerlink" title="中断事务"></a>中断事务</h6><p>如果阶段一任何一个参与者的反馈是 No，或者在等待超时之后，协调者没有收到所有参与者的响应，就会执行中断事务。中断事务流程如下：</p>
+<ol>
+<li><p><strong>发送中断请求</strong></p>
+<p>协调者向所有参与者发送 Abort 请求。</p>
+</li>
+<li><p><strong>中断事务</strong></p>
+<p>参与者收到协调者的 Abort 请求，或者在等待超时之后，参与者没有收到所有协调者的响应，就会执行中断操作。 </p>
+</li>
+</ol>
+<h5 id="DoCommit"><a href="#DoCommit" class="headerlink" title="DoCommit"></a>DoCommit</h5><h6 id="执行提交"><a href="#执行提交" class="headerlink" title="执行提交"></a>执行提交</h6><p>如果协调者处于正常状态，并且它接收到了所有参与者的 Ack 响应，那么就会执行提交。执行提交流程如下：</p>
+<ol>
+<li><p><strong>发送提交请求</strong></p>
+<p>协调者会从 “预提交” 状态转换为 “提交” 状态，并向所有参与者发送 doCommit 请求。</p>
+</li>
+<li><p><strong>事务提交</strong></p>
+<p>参与者接收到 doCommit 请求后，会正式执行事务提交操作，并在完成提交后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务提交结果</strong></p>
+<p>参与者完成事务提交之后，会向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>完成事务</strong></p>
+<p>协调者在收到所有参与者的 Ack 后，完成事务。</p>
+</li>
+</ol>
+<h6 id="中断事务-2"><a href="#中断事务-2" class="headerlink" title="中断事务"></a>中断事务</h6><p>如果协调者处于正常状态，有任意一个参与者向协调者反馈了 No 响应，或者在等待超时之后，参与者没有收到所有协调者的响应，就会中断事务。中断事务流程如下：</p>
+<ol>
+<li><p><strong>发送中断请求</strong></p>
+<p>协调者向所有参与者发送 Abort 请求。</p>
+</li>
+<li><p><strong>事务回滚</strong></p>
+<p>参与者在收到协调者的 Abort 请求后，会利用其阶段二中记录的 undo 信息来执行事务回滚操作，并在完成回滚后释放整个事务执行期间占用的事务资源。</p>
+</li>
+<li><p><strong>反馈事务回滚结果</strong></p>
+<p>参与者在完成回滚后，向协调者发送 Ack 消息。</p>
+</li>
+<li><p><strong>中断事务</strong></p>
+<p>协调者在收到所有参与者反馈的 Ack 消息后，中断事务。</p>
+</li>
+</ol>
+<h5 id="协议补充"><a href="#协议补充" class="headerlink" title="协议补充"></a>协议补充</h5><p>一旦进入阶段三，参与者等待协调者最终的指令，协调者发生了故障或者发生了网络故障，参与者在等待超时后最终会提交事务。</p>
+<h5 id="优缺点-1"><a href="#优缺点-1" class="headerlink" title="优缺点"></a>优缺点</h5><p>优点：</p>
+<ol>
+<li><p><strong>降低了参与者的阻塞范围，并且能够在单点故障后继续达成一致。</strong></p>
+<p>进入阶段三后，即使没有收到协调者最终的指令，参与者最终也会提交事务。</p>
+</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li><p><strong>可能会数据不一致</strong></p>
+<p>参与者在接收到PreCommit消息后，如果出现网络分区， 某个参与者无法和协调者进行通信，这个参与者最终会进行事务的提交（其他参与者可能会回滚）。</p>
+</li>
+</ol>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><ul>
+<li><strong>2PC 和 3PC 是基于 XA 规范衍生出来的</strong></li>
+<li><strong>2PC 和 3PC 都无法保证完全的数据一致性，需要利用补偿机制尽量确保数据的一致性。</strong></li>
+</ul>
+<h3 id="柔性事务"><a href="#柔性事务" class="headerlink" title="柔性事务"></a>柔性事务</h3><p><strong>柔性事务遵循 BASE 理论，满足最终一致性</strong>。</p>
+<p>柔性事务主要分为：</p>
+<ul>
+<li><strong>补偿型事务：</strong><ul>
+<li><strong>TCC</strong></li>
+<li><strong>Saga</strong></li>
+</ul>
+</li>
+<li><strong>通知型事务：</strong><ul>
+<li><strong>本地消息表</strong></li>
+<li><strong>MQ事务消息</strong></li>
+<li><strong>最大努力通知</strong></li>
+</ul>
+</li>
+</ul>
+<p>通知型事务又被称为异步事务，适用于对数据实时性要求较低的场景，主要分为：</p>
+<ul>
+<li>事务消息：主要适用于内部系统的数据最终一致性保障，因为内部相对比较可控，如订单和购物车、收货与清算、支付与结算等等场景；</li>
+<li>最大努力通知：主要用于外部系统，因为外部的网络环境更加复杂和不可信，所以只能尽最大努力去通知实现数据最终一致性，比如充值平台与运营商、支付对接等等跨网络系统级别对接；</li>
+</ul>
+<p>由于在分布式系统中可能会出现超时重试的情况，因此柔性事务中的操作必须是幂等的，需要通过幂等来避免多次请求所带来的问题。</p>
+<h4 id="TCC"><a href="#TCC" class="headerlink" title="TCC"></a>TCC</h4><p>TCC（Try-Confirm-Cancel）核心思想是：<strong>针对每个操作，都要注册一个与其对应的确认和补偿操作</strong>。TCC模型通过对业务逻辑的分解来实现分布式事务：</p>
+<ul>
+<li>Try：尝试执行业务，完成所有业务检查，预留必要的业务资源。</li>
+<li>Confirm：确认执行业务，不再做业务检查。只使用Try阶段预留的业务资源。</li>
+<li>Cancel： 若业务执行失败，则取消执行业务并释放Try阶段预留的业务资源。</li>
+</ul>
+<p>TCC分布式事务模型包括如下三部分：</p>
+<ul>
+<li>主业务服务：负责发起并完成整个业务活动。</li>
+<li>从业务服务：是整个业务活动的参与方，实现 Try、Confirm、Cancel 操作，供主业务服务调用。</li>
+<li>事务管理器：管理整个业务活动，包括记录事务状态，调用从业务服务的 Confirm/Cancel 操作等。</li>
+</ul>
+<p>以下单操作为例：</p>
+<p>账户表：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`account_tb`</span>  (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT <span class="keyword">COMMENT</span> <span class="string">'账户id'</span>,</span><br><span class="line">  <span class="string">`balance`</span> <span class="built_in">decimal</span>(<span class="number">12</span>, <span class="number">2</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'余额'</span>,</span><br><span class="line">  <span class="string">`available_balance`</span> <span class="built_in">decimal</span>(<span class="number">12</span>, <span class="number">2</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'可用余额'</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>) <span class="keyword">USING</span> BTREE</span><br><span class="line">) <span class="keyword">ENGINE</span> = <span class="keyword">InnoDB</span> <span class="built_in">CHARACTER</span> <span class="keyword">SET</span> = utf8mb4 <span class="keyword">COLLATE</span> = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;</span><br></pre></td></tr></table></figure>
+
+<p>余额冻结表：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`balance_frozen_tb`</span>  (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT <span class="keyword">COMMENT</span> <span class="string">'余额冻结表id'</span>,</span><br><span class="line">  <span class="string">`account_id`</span> <span class="built_in">bigint</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'账户表id'</span>,</span><br><span class="line">  <span class="string">`frozen_amount`</span> <span class="built_in">decimal</span>(<span class="number">12</span>, <span class="number">2</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'冻结金额'</span>,</span><br><span class="line">  <span class="string">`state`</span> <span class="built_in">tinyint</span>(<span class="number">2</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'状态，1：有效、0：无效'</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>) <span class="keyword">USING</span> BTREE</span><br><span class="line">) <span class="keyword">ENGINE</span> = <span class="keyword">InnoDB</span> <span class="built_in">CHARACTER</span> <span class="keyword">SET</span> = utf8mb4 <span class="keyword">COLLATE</span> = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;</span><br></pre></td></tr></table></figure>
+
+<p>流程如下：</p>
+<ul>
+<li><p>Try阶段：增加订单，冻结商品库存，冻结账户金额，Try阶段都需要提交本地事务。</p>
+<p>对于冻结账户金额操作：判断账户可用余额是否大于等于冻结金额（也就是订单金额），小于则操作失败，大于等于则插入一条余额冻结记录并修改账户表的可用余额字段（需保证线程安全）。冻结商品库存操作同理。</p>
+</li>
+<li><p>Confirm阶段：Try阶段执行成功，则将数据从中间态转为最终态。</p>
+<p>如果Try节点的冻结账户金额操作和冻结商品库存操作都执行成功，则进入Confirm阶段，将数据从中间态转为最终态。对于账户模块操作：将余额冻结表记录的状态置位无效并将账户余额设置为 【balance - frozen_amount】（需保证线程安全）。商品库存模块同理。</p>
+</li>
+</ul>
+<p>注意事项：<strong>Try阶段都需要提交本地事务</strong>。</p>
+<h5 id="存在的问题"><a href="#存在的问题" class="headerlink" title="存在的问题"></a>存在的问题</h5><h6 id="空回滚"><a href="#空回滚" class="headerlink" title="空回滚"></a>空回滚</h6><p>空回滚就是对于一个分布式事务，在没有调用 TCC 资源 Try 方法的情况下（如机器宕机、网络异常），调用了二阶段的 Cancel 方法，Cancel 方法需要识别出这是一个空回滚，然后直接返回成功。</p>
+<p><strong>解决办法</strong>：</p>
+<p>需要一张额外的事务控制表，其中有分布式事务 ID 和分支事务 ID，第一阶段 Try 方法里会插入一条记录，表示一阶段执行了。Cancel 接口里读取该记录，如果该记录存在，则正常回滚；如果该记录不存在，则是空回滚。</p>
+<h6 id="幂等"><a href="#幂等" class="headerlink" title="幂等"></a>幂等</h6><p>幂等就是对于同一个分布式事务的同一个分支事务，重复去调用该分支事务的第二阶段接口，因此，要求 TCC 的二阶段 Confirm 和 Cancel 接口保证幂等，不会重复使用或者释放资源。如果幂等控制没有做好，很有可能导致资损等严重问题。</p>
+<p><strong>解决办法</strong>：</p>
+<p>记录每个分支事务的执行状态。在执行前状态，如果已执行，那就不再执行；否则，正常执行。前面在讲空回滚的时候，已经有一张事务控制表了，事务控制表的每条记录关联一个分支事务，那我们完全可以在这张事务控制表上加一个状态字段，用来记录每个分支事务的执行状态。</p>
+<h6 id="悬挂"><a href="#悬挂" class="headerlink" title="悬挂"></a>悬挂</h6><p>悬挂就是对于一个分布式事务，其二阶段 Cancel 接口比 Try 接口先执行。因为空回滚会直接返回成功，但是如果又收到了 Try 请求，执行Try方法会预留资源，并且这些资源不能被释放。</p>
+<p><strong>解决办法</strong>：</p>
+<p>二阶段执行时插入一条事务控制记录，状态为已回滚，这样当一阶段执行时，先读取该记录，如果记录存在，就认为二阶段已经执行；否则二阶段没执行。</p>
+<h5 id="TCC对比2PC"><a href="#TCC对比2PC" class="headerlink" title="TCC对比2PC"></a>TCC对比2PC</h5><p>可以看出，TCC也是把事务分成了两个阶段，Try是阶段一，Confirm 和 Cancel 是阶段二的两个分支。这有点像2PC（二阶段提交），但其实他们是不一样的，下面是他们的区别：</p>
+<ol>
+<li>2PC和3PC 是数据库层面的，对于开发人员无感知；而TCC是业务层面的，对开发人员来说具有较高的开发成本；</li>
+<li>2PC是一个整体的长事务，是刚性事务；而TCC是一组本地短事务，是柔性事务；</li>
+<li>2PC是全局锁定资源，所有参与者阻塞等待事务管理器的通知；而TCC的资源锁定在于Try操作，业务方可以灵活选择业务资源的锁定粒度。</li>
+</ol>
+<h5 id="TCC优缺点"><a href="#TCC优缺点" class="headerlink" title="TCC优缺点"></a>TCC优缺点</h5><p>优点：</p>
+<ul>
+<li>应用可以自定义数据操作的粒度，降低了锁冲突，提升吞吐量。</li>
+</ul>
+<p>缺点： </p>
+<ul>
+<li>应用侵入性强， Try、Confirm、Cancel 三个阶段都需要业务逻辑实现。</li>
+<li>需要根据网络、系统故障等不同失败原因实现不同的回滚策略， 实现难度大，一般借助一些 TCC 开源框架。</li>
+</ul>
+<h4 id="Saga"><a href="#Saga" class="headerlink" title="Saga"></a>Saga</h4><p>Saga模型是把一个分布式事务拆分为多个本地事务，每个本地事务都有相应的执行模块和补偿模块（对应TCC中的Confirm和Cancel），当Saga事务中任意一个本地事务出错时，可以通过调用相关的补偿方法恢复之前的事务，达到事务最终一致性。</p>
+<p>Saga 模型由三部分组成：</p>
+<ul>
+<li><strong>LLT（Long Live Transaction）</strong>：由一个个本地事务组成的事务链。</li>
+<li><strong>本地事务</strong>：事务链由一个个子事务（本地事务）组成，LLT = T1+T2+T3+…+Ti。</li>
+<li><strong>补偿</strong>：每个本地事务 Ti 有对应的补偿 Ci。</li>
+</ul>
+<p>Saga 的执行顺序：</p>
+<ul>
+<li>正常情况： T1, T2, T3, …, Ti</li>
+<li>异常情况： T1, T2, T3, …, Ti, Ci, …, C3, C2, C1</li>
+</ul>
+<p>Saga 两种恢复策略：</p>
+<ul>
+<li>向后恢复（Backward Recovery）：撤销掉之前所有成功子事务。如果任意本地子事务失败，则补偿已完成的事务。<ul>
+<li>如异常情况的执行顺序：T1, T2, T3, …, Ti, Ci, …, C3, C2, C1</li>
+</ul>
+</li>
+<li>向前恢复（Forward Recovery）：即重试失败的事务，适用于必须要成功的场景，该情况下不需要Ci。<ul>
+<li>如重试执行顺序：T1,T2,…,Tj（失败）,Tj（重试）,…,Ti。T1, T2, T3, …, Ti, Ci, …, C3, C2, C1</li>
+</ul>
+</li>
+</ul>
+<p>Saga 模型可以满足事务的三个特性ACD：</p>
+<ul>
+<li>原子性：Saga 协调器协调事务链中的本地事务要么全部提交，要么全部回滚。</li>
+<li>一致性：Saga 事务可以实现最终一致性。</li>
+<li>持久性：基于本地事务，所以这个特性可以很好实现。</li>
+</ul>
+<p>Saga缺乏隔离性会带来脏读，幻读，不可重复读的问题。由于Saga 事务和 TCC 事务一样，都是强依靠业务改造，因此需要在业务设计上去解决这个问题：</p>
+<ul>
+<li><p>在应⽤层⾯加⼊逻辑锁的逻辑。</p>
+</li>
+<li><p>Session 层⾯隔离来保证串⾏化操作。</p>
+</li>
+<li><p>业务层⾯采⽤预先冻结数据的方式隔离此部分数据。</p>
+</li>
+<li><p>业务操作过程中通过及时读取当前状态的⽅式获取更新。</p>
+<p>实现Saga的注意事项：</p>
+</li>
+<li><p>Ti和Ci必须是幂等的。如向后恢复和向前恢复时候如果不是幂等操作会导致数据不一致。</p>
+</li>
+<li><p>Ci必须是能够成功的，如果无法成功则需要人工介入。</p>
+</li>
+<li><p>Ti-&gt;Ci和Ci-&gt;Ti的执行结果必须是一样的。</p>
+</li>
+</ul>
+<h5 id="Saga对比TCC"><a href="#Saga对比TCC" class="headerlink" title="Saga对比TCC"></a>Saga对比TCC</h5><p>Saga和TCC都是补偿型事务，Sage相比TCC的优缺点为：</p>
+<p>劣势：</p>
+<ul>
+<li>无法保证隔离性；</li>
+<li>同样存在空回滚、幂等、悬挂等问题；</li>
+</ul>
+<p>优势：</p>
+<ul>
+<li>一阶段提交本地事务，无锁，高性能；</li>
+<li>事件驱动模式，参与者可异步执行，高吞吐；</li>
+<li>Saga 对业务侵入较小，只需要提供一个逆向操作的Cancel即可；而TCC需要对业务进行全局性的流程改造； </li>
+</ul>
+<h4 id="本地消息表"><a href="#本地消息表" class="headerlink" title="本地消息表"></a>本地消息表</h4><p>本地消息表最初由eBay 提出来解决分布式事务的问题。是目前业界使用的比较多的方案之一，它的核心思想就是将分布式事务拆分成本地事务进行处理。</p>
+<p>发送消息方：</p>
+<ul>
+<li>需要有一个消息表，记录着消息状态相关信息。</li>
+<li>业务数据和消息表在同一个数据库，要保证它俩在同一个本地事务。</li>
+<li>在本地事务中处理完业务数据和写消息表操作后，通过写消息到 MQ 消息队列。</li>
+<li>消息会发到消息消费方，如果发送失败，即进行重试。</li>
+</ul>
+<p>消息消费方：</p>
+<ul>
+<li>处理消息队列中的消息，完成自己的业务逻辑。</li>
+<li>如果本地事务处理成功，则表明已经处理成功了。</li>
+<li>如果本地事务处理失败，那么就会重试执行。</li>
+<li>如果是业务层面的失败，给消息生产方发送一个业务补偿消息，通知进行回滚等操作。</li>
+</ul>
+<p>生产方和消费方定时扫描本地消息表，把还没处理完成的消息或者失败的消息再发送一遍。</p>
+<h5 id="本地消息表优缺点"><a href="#本地消息表优缺点" class="headerlink" title="本地消息表优缺点"></a>本地消息表优缺点</h5><p>优点：</p>
+<ul>
+<li>本地消息表建设成本比较低，实现了可靠消息的传递确保了分布式事务的最终一致性。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>本地消息表与业务耦合在一起，难于做成通用性，不可独立伸缩。</li>
+<li>本地消息表是基于数据库来做的，而数据库是要读写磁盘IO的，因此在高并发下是有性能瓶颈。</li>
+</ul>
+<h4 id="MQ事务消息"><a href="#MQ事务消息" class="headerlink" title="MQ事务消息"></a>MQ事务消息</h4><p>基于MQ的<strong>事务消息</strong>方案主要依靠MQ的<strong>半消息机制</strong>来实现投递消息和参与者自身本地事务的一致性保障。</p>
+<p>半消息：指的是生产者生产消息之后，发送 Commit 命令之前，这个消息对于消费者不可见。（Kafka 和 RocketMQ 都支持事务消息）</p>
+<p>流程如下：</p>
+<ol>
+<li>事务发起方首先发送半消息到MQ；</li>
+<li>MQ通知发送方消息发送成功；</li>
+<li>在发送半消息成功后执行本地事务；</li>
+<li>根据本地事务执行结果返回commit或者是rollback；</li>
+<li>如果消息是rollback, MQ将丢弃该消息不投递；如果是commit，MQ将会消息发送给消息订阅方；</li>
+<li>订阅方根据消息执行本地事务；</li>
+<li>订阅方执行本地事务成功后再从MQ中将该消息标记为已消费；</li>
+<li>如果发起方执行本地事务过程中，执行端挂掉，或者超时，MQ服务器端将不停的询问producer来获取事务状态；（以RocketMQ为例 ）</li>
+<li>Consumer端的消费成功机制有MQ保证； </li>
+</ol>
+<h5 id="MQ事务消息对比本地消息表"><a href="#MQ事务消息对比本地消息表" class="headerlink" title="MQ事务消息对比本地消息表"></a>MQ事务消息对比本地消息表</h5><p>MQ事务消息：</p>
+<ul>
+<li>需要MQ支持半消息机制或者类似特性，在重复投递上具有比较好的去重处理；</li>
+<li>具有比较大的业务侵入性，需要业务方进行改造，提供对应的本地操作成功的回查功能；</li>
+</ul>
+<p>DB本地消息表：</p>
+<ul>
+<li>使用了数据库来存储事务消息，降低了对MQ的要求，但是增加了存储成本；</li>
+<li>事务消息使用了异步投递，增大了消息重复投递的可能性；</li>
+</ul>
+<h4 id="最大努力通知"><a href="#最大努力通知" class="headerlink" title="最大努力通知"></a>最大努力通知</h4><p>最大努力通知方案的目标，就是发起通知方通过一定的机制，最大努力将业务处理结果通知到接收方。本质是通过引入定期校验机制实现最终一致性，对业务的侵入性较低，适合于对最终一致性敏感度比较低、业务链路较短的场景。</p>
+<p>最大努力通知解决方案：要实现最大努力通知，可以采用 MQ 的 ACK 机制。</p>
+<p>流程如下：</p>
+<ol>
+<li>业务活动的主动方，在完成业务处理之后，向业务活动的被动方发送消息，允许消息丢失。</li>
+<li>主动方可以设置时间阶梯型通知规则，在通知失败后按规则重复通知，直到通知N次后不再通知。</li>
+<li>主动方提供校对查询接口给被动方按需校对查询，用于恢复丢失的业务消息。</li>
+<li>业务活动的被动方如果正常接收了数据，就正常返回响应，并结束事务。</li>
+<li>如果被动方没有正常接收，根据定时策略，向业务活动主动方查询，恢复丢失的业务消息。</li>
+</ol>
+<p>特点</p>
+<ul>
+<li>用到的服务模式：可查询操作、幂等操作；</li>
+<li>被动方的处理结果不影响主动方的处理结果；</li>
+<li>适用于对业务最终一致性的时间敏感度低的系统；</li>
+<li>适合跨企业的系统间的操作，或者企业内部比较独立的系统间的操作，比如银行通知、商户通知等；</li>
+</ul>
+<h3 id="方案对比"><a href="#方案对比" class="headerlink" title="方案对比"></a>方案对比</h3><table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left">XA/2PC/3PC</th>
+<th align="left">TCC</th>
+<th align="left">Saga</th>
+<th align="left">本地消息表</th>
+<th align="left">事务消息</th>
+<th align="left">最大努力通知</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">事务一致性</td>
+<td align="left">强</td>
+<td align="left">弱</td>
+<td align="left">弱</td>
+<td align="left">弱</td>
+<td align="left">弱</td>
+<td align="left">弱</td>
+</tr>
+<tr>
+<td align="left">复杂性</td>
+<td align="left">中</td>
+<td align="left">高</td>
+<td align="left">中</td>
+<td align="left">低</td>
+<td align="left">低</td>
+<td align="left">低</td>
+</tr>
+<tr>
+<td align="left">业务侵入性</td>
+<td align="left">小</td>
+<td align="left">大</td>
+<td align="left">小</td>
+<td align="left">中</td>
+<td align="left">中</td>
+<td align="left">中</td>
+</tr>
+<tr>
+<td align="left">使用局限性</td>
+<td align="left">大</td>
+<td align="left">大</td>
+<td align="left">中</td>
+<td align="left">小</td>
+<td align="left">中</td>
+<td align="left">中</td>
+</tr>
+<tr>
+<td align="left">性能</td>
+<td align="left">低</td>
+<td align="left">中</td>
+<td align="left">高</td>
+<td align="left">高</td>
+<td align="left">高</td>
+<td align="left">高</td>
+</tr>
+<tr>
+<td align="left">维护成本</td>
+<td align="left">低</td>
+<td align="left">高</td>
+<td align="left">中</td>
+<td align="left">低</td>
+<td align="left">中</td>
+<td align="left">中</td>
+</tr>
+</tbody></table>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><h3 id="jta-Atomikos"><a href="#jta-Atomikos" class="headerlink" title="jta + Atomikos"></a>jta + Atomikos</h3><p>jat + Atomikos <strong>常用于解决单体项目多数据源</strong>的分布式事务场景。</p>
+<p>JTA（java Transaction API）是JavaEE 13 个开发规范之一。Java 事务API，允许应用程序执行分布式事务处理——在两个或多个网络计算机资源上访问并且更新数据。JDBC驱动程序的JTA支持极大地增强了数据访问能力。事务最简单最直接的目的就是保证数据的有效性，数据的一致性。</p>
+<p>Atomikos 是一个实现了 XA 协议的开源事务管理器。</p>
+<h3 id="Seata"><a href="#Seata" class="headerlink" title="Seata"></a>Seata</h3><p>Seata 是一款开源的分布式事务解决方案，致力于提供高性能和简单易用的分布式事务服务。<a href="https://seata.io/zh-cn/docs/overview/what-is-seata.html" target="_blank" rel="noopener">官方文档</a></p>
+<p>Seata 为用户提供了 <strong>AT</strong>、<strong>TCC</strong>、<strong>SAGA</strong> 和 <strong>XA</strong> 事务模式，为用户打造一站式的分布式解决方案。（AT模式也是基于2PC）</p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+      </categories>
+      <tags>
+        <tag>2PC</tag>
+        <tag>3PC</tag>
+        <tag>分布式事务</tag>
+        <tag>事务</tag>
+        <tag>XA</tag>
+        <tag>TCC</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>幂等性的解决方案</title>
+    <url>/2021/07/01/%E5%B9%82%E7%AD%89%E6%80%A7%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/</url>
+    <content><![CDATA[<p>在编程开发中，对于幂等的定义为：无论对某一个资源操作了多少次，其影响都应是相同的。 换句话说就是：在接口重复调用的情况下，对系统产生的影响是一样的，但是返回值允许不同。幂等关注的是是否对资源产生影响，而不关注结果。</p>
+<a id="more"></a>
+
+<h2 id="防止重复提交"><a href="#防止重复提交" class="headerlink" title="防止重复提交"></a>防止重复提交</h2><p>在谈幂等性的实现方案之前，先谈一下防止重复提交。通常有两种模式：</p>
+<ul>
+<li>前端防止重复提交</li>
+<li>POST-REDIRECT-GET 模式</li>
+</ul>
+<p><strong>前端防止重复提交</strong></p>
+<p>可通过防抖、节流函数实现</p>
+<p><strong>POST-REDIRECT-GET 模式</strong></p>
+<p>流程如下图所示：</p>
+<img src="/2021/07/01/%E5%B9%82%E7%AD%89%E6%80%A7%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/POST-REDIRECT-GET.png" class="" title="POST-REDIRECT-GET">
+
+<p>Post/Redirect/Get 方式除了能防止 Post 请求的重复提交外，还可以完善网页收藏功能。把 Post 请求直接返回的网页收藏到书签是无效的，因为这个网页的重现依赖于 Post 请求以及当时提前的数据。采用 PRG 方式，用户正常情况下收藏到的是重定向后 GET 方法返回的网页，这样使得收藏有效了。</p>
+<h2 id="幂等实现方案"><a href="#幂等实现方案" class="headerlink" title="幂等实现方案"></a>幂等实现方案</h2><h3 id="查询-删除"><a href="#查询-删除" class="headerlink" title="查询/删除"></a>查询/删除</h3><p>通常查询一次和查询多次，在数据不变的情况下，查询结果都是幂等的。</p>
+<p>删除一次和删除多次都是把数据删除，不同的是返回结果可能不同，重复删除的结果可能提示操作失败。</p>
+<h3 id="唯一索引"><a href="#唯一索引" class="headerlink" title="唯一索引"></a>唯一索引</h3><p>通过使用唯一索引来防止新增数据请求幂等，例如：通过手机号注册账户，手机号使用唯一索引。</p>
+<h3 id="防重表"><a href="#防重表" class="headerlink" title="防重表"></a>防重表</h3><p>有时候表中并非所有的场景都不允许产生重复的数据，只有某些特定场景才不允许。这时候，直接在表中加唯一索引，显然是不太合适的。</p>
+<p>针对这种情况，我们可以通过建防重表来解决问题。以用户注册为例：该表有 id 字段和一个唯一索引：手机号和请求时间戳（前端产生）。其实也是通过唯一索引来保证新增数据请求幂等。</p>
+<h3 id="token机制"><a href="#token机制" class="headerlink" title="token机制"></a>token机制</h3><p>token机制来保证幂等性是一种非常常见的解决方案，同时也适合绝大部分场景。</p>
+<ol>
+<li>服务端提供获取token接口，供客户端进行使用。服务端生成token后，如果当前为分布式架构，将token存放于redis中；</li>
+<li>当客户端发起请求前，先获取token，获取到token后会携带着token发起请求；</li>
+<li>服务端接收到客户端请求后，首先会判断该token在redis中是否存在。如果存在，则完成进行业务处理，业务处理完成后，再删除token。如果不存在，代表当前请求是重复请求，直接向客户端返回对应标识。</li>
+</ol>
+<p>但这需要注意：如果先执行业务再删除token。在高并发下，很有可能出现第一次访问时token存在，完成具体业务操作。但在还没有删除token时，客户端又携带token发起请求，此时，因为token还存在，第二次请求也会验证通过，执行具体业务操作。</p>
+<p>有两种解决方案：</p>
+<ul>
+<li>分布式锁，保证线程安全</li>
+<li>先删除，删除成功再执行业务</li>
+</ul>
+<h3 id="状态机"><a href="#状态机" class="headerlink" title="状态机"></a>状态机</h3><p>很多时候业务表是有状态的，比如订单表中有：1-下单、2-已支付、3-完成、4-撤销等状态。如果这些状态的值是有规律的，按照业务节点正好是从小到大，我们就能通过它来保证接口的幂等性。</p>
+<p>假如 id=123 的订单状态是已支付，现在要变成完成状态。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">update</span> <span class="string">`order`</span> <span class="keyword">set</span> <span class="keyword">status</span>=<span class="number">3</span> <span class="keyword">where</span> <span class="keyword">id</span>=<span class="number">123</span> <span class="keyword">and</span> <span class="keyword">status</span>=<span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="悲观锁"><a href="#悲观锁" class="headerlink" title="悲观锁"></a>悲观锁</h3><p>可以加悲观锁，将数据锁住，在同一时刻只允许一个请求获得锁，更新数据，其他的请求则等待。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">id</span>=<span class="number">123</span> <span class="keyword">for</span> <span class="keyword">update</span>;</span><br></pre></td></tr></table></figure>
+
+<p>悲观锁需要在同一个事务操作过程中锁住一行数据，如果事务耗时比较长，会造成大量的请求等待，影响接口性能。此外，每次请求接口很难保证都有相同的返回值，所以不适合幂等性设计场景，但是在防重场景中是可以的使用的。在这里顺便说一下，防重设计 和 幂等设计，其实是有区别的。防重设计主要为了避免产生重复数据，对接口返回没有太多要求。而幂等设计除了避免产生重复数据之外，还要求每次请求都返回一样的结果。</p>
+<h3 id="乐观锁"><a href="#乐观锁" class="headerlink" title="乐观锁"></a>乐观锁</h3><p>悲观锁有性能问题，为了提升接口性能，可以使用乐观锁，在表中增加一个 version 字段。</p>
+<p>具体步骤：</p>
+<ol>
+<li>先根据id查询用户信息，包含version字段</li>
+<li>根据id和version字段值作为where条件的参数，更新用户信息，同时version+1</li>
+<li>判断操作影响行数，如果影响1行，则说明是一次请求，可以做其他数据操作。</li>
+<li>如果影响0行，说明是重复请求，则直接返回成功。</li>
+</ol>
+<h3 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h3><p>悲观锁和乐观锁都是基于数据库的行锁来实现，也可以借助 Redis 或 Zookeeper 来实现分布式锁。</p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+      </categories>
+      <tags>
+        <tag>幂等性</tag>
+      </tags>
+  </entry>
 </search>
