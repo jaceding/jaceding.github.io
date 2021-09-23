@@ -28,7 +28,7 @@
 <meta property="og:description" content="实用的Shell脚本汇总">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-04-19T07:33:03.000Z">
-<meta property="article:modified_time" content="2021-06-21T05:49:28.074Z">
+<meta property="article:modified_time" content="2021-08-16T08:09:40.293Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="Shell">
 <meta property="article:tag" content="脚本">
@@ -259,6 +259,9 @@
 <p>删除 /usr/db_backup/ 目录中10天前的所有文件</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find /usr/translation_backup -type f -mtime +10 | xargs rm -rf</span><br></pre></td></tr></table></figure>
 
+<p>删除 /usr/translation_backup 目录中大于50M的文件</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find /usr/translation_backup -size +50M -<span class="built_in">exec</span> rm &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
 <h2 id="按关键字批量杀进程"><a href="#按关键字批量杀进程" class="headerlink" title="按关键字批量杀进程"></a>按关键字批量杀进程</h2><p>杀掉所有包含 downloader-jar 字符串的相关进程</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps -ef | grep <span class="string">"downloader-jar"</span> | grep -v grep | awk <span class="string">'&#123;print "kill -9 " $2&#125;'</span>|sh</span><br></pre></td></tr></table></figure>
 
@@ -287,9 +290,18 @@
 <li><strong>CLOSED</strong>: 被动关闭端在接受到ACK包后，就进入了closed的状态，连接结束，没有任何连接状态；</li>
 <li><strong>UNKNOWN</strong>：未知的Socket状态；</li>
 </ol>
+<h2 id="查看磁盘IO使用状况"><a href="#查看磁盘IO使用状况" class="headerlink" title="查看磁盘IO使用状况"></a>查看磁盘IO使用状况</h2><p>通过 <a href="https://wangchujiang.com/linux-command/c/iotop.html" target="_blank" rel="noopener">iotop 命令</a> 查看磁盘IO使用状况</p>
+<p>相关选项：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-o：只显示有io操作的进程</span><br><span class="line">-b：批量显示，无交互，主要用作记录到文件。</span><br><span class="line">-n NUM：显示NUM次，主要用于非交互式模式。</span><br><span class="line">-d SEC：间隔SEC秒显示一次。</span><br><span class="line">-p PID：监控的进程pid。</span><br><span class="line">-u USER：监控的进程用户。</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看实时流量"><a href="#查看实时流量" class="headerlink" title="查看实时流量"></a>查看实时流量</h2><p>通过 <a href="https://wangchujiang.com/linux-command/c/iftop.html" target="_blank" rel="noopener">iftop 命令</a> 查看实时流量</p>
+<p>第一行为带宽，这里为1Mbit，不是字节哦。</p>
+<p>连接列表，最后三列分别是2秒，10秒和40秒的平均流量， =&gt; 代表发送，&lt;= 代表接收。</p>
+<p>最后三行表示发送，接收和全部的流量。第二列为你运行iftop到目前流量，第三列为高峰值，第四列为平均值。</p>
 <h2 id="更多资料"><a href="#更多资料" class="headerlink" title="更多资料"></a>更多资料</h2><ol>
 <li><a href="https://zhuanlan.zhihu.com/p/361002716" target="_blank" rel="noopener">23 个开箱即用的实用 Shell 脚本分享</a></li>
 <li><a href="https://zhuanlan.zhihu.com/p/44952329" target="_blank" rel="noopener">9个实战及面试常用Shell脚本编写</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/399727406" target="_blank" rel="noopener">Linux 运维必备的13款实用工具，赶紧收藏</a></li>
 </ol>
 
     </div>
@@ -395,7 +407,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#定时清除文件"><span class="nav-number">1.</span> <span class="nav-text">定时清除文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#按关键字批量杀进程"><span class="nav-number">2.</span> <span class="nav-text">按关键字批量杀进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看连接数"><span class="nav-number">3.</span> <span class="nav-text">查看连接数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更多资料"><span class="nav-number">4.</span> <span class="nav-text">更多资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#定时清除文件"><span class="nav-number">1.</span> <span class="nav-text">定时清除文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#按关键字批量杀进程"><span class="nav-number">2.</span> <span class="nav-text">按关键字批量杀进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看连接数"><span class="nav-number">3.</span> <span class="nav-text">查看连接数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看磁盘IO使用状况"><span class="nav-number">4.</span> <span class="nav-text">查看磁盘IO使用状况</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看实时流量"><span class="nav-number">5.</span> <span class="nav-text">查看实时流量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更多资料"><span class="nav-number">6.</span> <span class="nav-text">更多资料</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -411,7 +423,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">59</span>
+          <span class="site-state-item-count">61</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -424,7 +436,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">164</span>
+        <span class="site-state-item-count">165</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

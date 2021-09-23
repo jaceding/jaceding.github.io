@@ -200,6 +200,169 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/" class="post-title-link" itemprop="url">Raft协议</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-09-07 13:46:00" itemprop="dateCreated datePublished" datetime="2020-09-07T13:46:00+08:00">2020-09-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Paxos算法不容易实现，Raft算法是对Paxos算法的简化和改进。</p>
+<p>Raft算法将一致性问题分解为两个的子问题，<strong>Leader选举（Leader election）和日志复制（Log Replication）</strong>。</p>
+<p>Raft协议的节点有三种状态：<strong>Leader</strong>、<strong>Follower</strong>、<strong>Candidate</strong>。</p>
+<p>Leader：所有对系统的修改都会先经过leader。每个修改操作都会写一条日志，然后将日志复制到所有Follower节点，多数Follower节点响应时才提交日志，然后通知Follower节点提交日志，这个过程叫做<strong>Log Replication</strong>。</p>
+<p>Follower：所有节点都以follower的状态开始，如果没收到Leader的心跳则会变成Candidate状态。</p>
+<p>Candidate：发起投票，如果得到多数节点的选票则成为Leader，这个过程叫做<strong>Leader election</strong>。等待超时会重新发起投票，竞选失败（收到了Leader的心跳）则会变成Follower状态。</p>
+<p><a href="https://raft.github.io/" target="_blank" rel="noopener">Raft官网</a></p>
+<p><a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">Raft论文</a></p>
+<p><a href="http://thesecretlivesofdata.com/raft/" target="_blank" rel="noopener">Raft动画演示</a></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/09/07/Raft%E5%8D%8F%E8%AE%AE/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" class="post-title-link" itemprop="url">分布式锁</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-21 09:44:15" itemprop="dateCreated datePublished" datetime="2020-08-21T09:44:15+08:00">2020-08-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">分布式</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>JVM中提供的synchronized和Lock锁都是JVM级别的，也就是说synchronized和Lock只在同一Java进程内有效，当我们需要实现多个JVM进程之前的线程互斥时，我们就需要使用分布式锁了。</strong></p>
+<p>注意：相比单机锁，分布式锁并不能提高性能，甚至由于网络IO，会降低系统的性能。在高并发环境，可以先尝试获取单机锁，如果单机锁获取失败则无需尝试获取分布式锁，避免多余的网络IO降低系统性能。如果获取单机锁成功，再尝试获取分布式锁。</p>
+<h2 id="分布式锁特性"><a href="#分布式锁特性" class="headerlink" title="分布式锁特性"></a>分布式锁特性</h2><ul>
+<li><strong>互斥性</strong>：保证只有一个线程持有同一把锁。</li>
+<li><strong>健壮性</strong>：避免死锁，锁不会被永久持有，即使服务奔溃了，也要保证锁在一定期间内会被安全释放。</li>
+<li><strong>高可用性</strong>：除非整个分布式系统瘫痪，只要有服务存活，都允许获取和释放锁。</li>
+<li><strong>安全性</strong>：谁上的锁由谁释放，不能被其他线程解锁。</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/08/21/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/08/16/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3ThreadLocal/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -421,162 +584,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Semaphore/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Jace Ding">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jace Ding">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Semaphore/" class="post-title-link" itemprop="url">深入理解Semaphore</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-08-14 15:40:22" itemprop="dateCreated datePublished" datetime="2020-08-14T15:40:22+08:00">2020-08-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><strong>Semaphore是基于AQS共享锁来实现，默认采用非公平锁。</strong>Semaphore 类似于操作系统中的信号量，可以控制对互斥资源的访问线程数。</p>
-<p>Semaphore用于限制可以访问某些资源（物理或逻辑的）的线程数目，其维护了一个许可证集合，有多少资源限制就维护多少许可证集合，假如这里有N个资源，那就对应于N个许可证，同一时刻也只能有N个线程访问。一个线程获取许可证就调用acquire方法，用完了释放资源就调用release方法。</p>
-<p><strong>可以在构造方法中指定是公平锁还是非公平锁</strong></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Semaphore/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CyclicBarrier/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Jace Ding">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Jace Ding">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CyclicBarrier/" class="post-title-link" itemprop="url">深入理解CyclicBarrier</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-08-14 13:56:58" itemprop="dateCreated datePublished" datetime="2020-08-14T13:56:58+08:00">2020-08-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><strong>CyclicBarrier基于AQS的Condition来实现。</strong></p>
-<p><strong>相比CountDownLatch，CyclicBarrier 可以有不止一个栅栏，因为它的栅栏（Barrier）可以重复使用（Cyclic）。</strong></p>
-<p>CyclicBarrier允许一组线程在到达某个栅栏点(common barrier point)互相等待，直到最后一个线程到达栅栏点，栅栏才会打开，处于阻塞状态的线程恢复继续执行。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CyclicBarrier/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/5/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><span class="space">&hellip;</span><a class="page-number" href="/page/12/">12</a><a class="extend next" rel="next" href="/page/7/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/5/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/">7</a><span class="space">&hellip;</span><a class="page-number" href="/page/13/">13</a><a class="extend next" rel="next" href="/page/7/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -644,7 +655,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">59</span>
+          <span class="site-state-item-count">61</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -657,7 +668,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">164</span>
+        <span class="site-state-item-count">165</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
