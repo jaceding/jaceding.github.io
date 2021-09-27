@@ -28,11 +28,10 @@
 <meta property="og:description" content="本文记录了服务器常用环境的一些命令总结。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-09-08T06:24:46.000Z">
-<meta property="article:modified_time" content="2021-09-09T11:26:56.592Z">
+<meta property="article:modified_time" content="2021-09-26T06:15:12.294Z">
 <meta property="article:author" content="Jace Ding">
-<meta property="article:tag" content="Jace Ding">
-<meta property="article:tag" content="Jie Ding">
-<meta property="article:tag" content="丁杰">
+<meta property="article:tag" content="nginx">
+<meta property="article:tag" content="pdsh">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://jaceding.github.io/2021/09/08/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE/">
@@ -254,6 +253,15 @@
         <p>本文记录了服务器常用环境的一些命令总结。</p>
 <a id="more"></a>
 
+<h2 id="常用软件"><a href="#常用软件" class="headerlink" title="常用软件"></a>常用软件</h2><p><code>vim</code> 安装：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get install -y vim</span><br></pre></td></tr></table></figure>
+
+<p><code>gcc</code> 安装：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get -y install make gcc g++  zlib1g-dev libpcre3 libpcre3-dev</span><br></pre></td></tr></table></figure>
+
+<p>模块安装：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aptitude -y install libpcre3 libpcre3-dev libpcrecpp0 libssl-dev zlib1g-dev</span><br></pre></td></tr></table></figure>
+
 <h2 id="时间同步"><a href="#时间同步" class="headerlink" title="时间同步"></a>时间同步</h2><p><code>ntpdata</code> 安装：</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get install ntpdate</span><br></pre></td></tr></table></figure>
 
@@ -273,8 +281,9 @@
 <figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cat</span> /etc/rc.<span class="keyword">local</span></span><br></pre></td></tr></table></figure>
 
 <p>如果没有，则添加：</p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/bin/sh -e</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># rc.local</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This script is executed at the end of each multiuser runlevel.</span></span><br><span class="line"><span class="comment"># value on error.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># In order to enable or disable this script just change the execution</span></span><br><span class="line"><span class="comment"># bits.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># By default this script does nothing.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">exit</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/bin/sh -e#!/bin/bash</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># rc.local</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This script is executed at the end of each multiuser runlevel.</span></span><br><span class="line"><span class="comment"># value on error.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># In order to enable or disable this script just change the execution</span></span><br><span class="line"><span class="comment"># bits.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># By default this script does nothing.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">exit</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
 
+<p><strong>注意</strong>：第一行必须是 <code>#!/bin/bash</code>，否则 执行不了 <code>source /etc/profile</code></p>
 <p>然后赋予权限：</p>
 <figure class="highlight h"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chmod +x /etc/rc.local</span><br></pre></td></tr></table></figure>
 
@@ -366,10 +375,55 @@
 <p>构建内容：</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">server_zip_path=<span class="string">"/usr/websync/safety_transfer_formal"</span></span><br><span class="line">server_path=<span class="string">"/usr/safety_transfer"</span></span><br><span class="line"></span><br><span class="line">nowtime=`date --date=<span class="string">'0 days ago'</span> <span class="string">"+%Y-%m-%d %H:%M:%S"</span>`</span><br><span class="line"><span class="built_in">echo</span> nowtime=<span class="variable">$nowtime</span></span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$server_zip_path</span></span><br><span class="line">curpkg=`sed -n <span class="string">'1p'</span> version_cur`</span><br><span class="line">newpkg=`sed -n <span class="string">'1p'</span> version`</span><br><span class="line"><span class="built_in">echo</span> curpkg=<span class="variable">$curpkg</span></span><br><span class="line"><span class="built_in">echo</span> newpkg=<span class="variable">$newpkg</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ <span class="variable">$curpkg</span> -ne <span class="variable">$newpkg</span> ];<span class="keyword">then</span></span><br><span class="line">    <span class="comment"># 检测zip文件是否存在</span></span><br><span class="line">    <span class="keyword">if</span> [[ -f <span class="variable">$newpkg</span>.zip ]];<span class="keyword">then</span></span><br><span class="line">        <span class="built_in">cd</span> <span class="variable">$server_zip_path</span></span><br><span class="line">        version=`cat version`</span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$version</span></span><br><span class="line">        rm -r <span class="variable">$server_path</span>/build/SafetyTransfer-1.0.jar</span><br><span class="line">        unzip -o <span class="variable">$server_zip_path</span>/<span class="variable">$version</span>.zip -d <span class="variable">$server_path</span>/build</span><br><span class="line"></span><br><span class="line">        <span class="built_in">cd</span> <span class="variable">$server_path</span></span><br><span class="line">        <span class="built_in">source</span> /etc/profile</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"构建docker镜像..."</span></span><br><span class="line">        docker-compose build</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"构建docker镜像成功"</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"项目启动..."</span></span><br><span class="line">        docker-compose up -d</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"项目启动成功"</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"清除已停止的容器、未被使用的卷、未被关联的网络、镜像..."</span></span><br><span class="line">        docker image prune -a -f</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"清除已停止的容器、未被使用的卷、未被关联的网络、镜像成功"</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$newpkg</span> &gt; <span class="variable">$server_zip_path</span>/version_cur</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$newpkg</span><span class="string">".zip 不存在"</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$nowtime</span><span class="string">" 版本号一致，无需更新"</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="built_in">exit</span> 0</span><br></pre></td></tr></table></figure>
 
+<h2 id="SSH免密"><a href="#SSH免密" class="headerlink" title="SSH免密"></a>SSH免密</h2><ol>
+<li><p>生成密钥</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -t rsa -P <span class="string">''</span> -f ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>查看公钥</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat ~/.ssh/id_rsa.pub</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>认证。注意：如果 A 需要SSH免密登陆 B，需要将 A 的公钥写入 B 的 ~/.ssh/authorized_keys 文件中</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 写入公钥</span></span><br><span class="line">vim ~/.ssh/authorized_keys</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改SSH配置</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/ssh/sshd_config</span><br><span class="line"><span class="comment"># 允许 root 用户登录：PermitRootLogin yes</span></span><br><span class="line"><span class="comment"># 在AllowUsers 添加 root@10.104.122.26</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>重载配置</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/etc/init.d/ssh reload</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h2 id="pdsh安装"><a href="#pdsh安装" class="headerlink" title="pdsh安装"></a>pdsh安装</h2><p>pdsh 默认不支持 SSH 修改端口。 </p>
+<ol>
+<li><p>下载</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget https://hub.fastgit.org/chaos/pdsh/releases/download/pdsh-2.34/pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>解压</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编译</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> pdsh-2.34/</span><br><span class="line">./configure --without-rsh --with-ssh --with-machines=/etc/pdsh/machines --with-dshgroups --with-timeout=10</span><br><span class="line">make &amp;&amp; make install</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>测试安装是否成功</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pdsh -V</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>设置pdsh主机</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/pdsh/machines</span><br><span class="line"><span class="comment"># 添加主机，例如：</span></span><br><span class="line">clickhouse1</span><br><span class="line">clickhouse2</span><br><span class="line">clickhouse3</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>测试使用</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pdsh -a free -m</span><br><span class="line">pdsh -a <span class="string">"cd /usr/local &amp;&amp; ls -l"</span></span><br></pre></td></tr></table></figure>
 
 
 
+</li>
+</ol>
+<ol start="7">
+<li><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget https://hub.fastgit.org/chaos/pdsh/releases/download/pdsh-2.34/pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
 
+
+
+</li>
+</ol>
 
     </div>
 
@@ -398,6 +452,10 @@
 
 
       <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/nginx/" rel="tag"># nginx</a>
+              <a href="/tags/pdsh/" rel="tag"># pdsh</a>
+          </div>
 
         
 
@@ -470,7 +528,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#时间同步"><span class="nav-number">1.</span> <span class="nav-text">时间同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开机自启动"><span class="nav-number">2.</span> <span class="nav-text">开机自启动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内核参数修改"><span class="nav-number">3.</span> <span class="nav-text">内核参数修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nginx-安装"><span class="nav-number">4.</span> <span class="nav-text">nginx 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#nginx-conf-模板"><span class="nav-number">4.1.</span> <span class="nav-text">nginx.conf 模板</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自动构建脚本"><span class="nav-number">5.</span> <span class="nav-text">自动构建脚本</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#常用软件"><span class="nav-number">1.</span> <span class="nav-text">常用软件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#时间同步"><span class="nav-number">2.</span> <span class="nav-text">时间同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开机自启动"><span class="nav-number">3.</span> <span class="nav-text">开机自启动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内核参数修改"><span class="nav-number">4.</span> <span class="nav-text">内核参数修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nginx-安装"><span class="nav-number">5.</span> <span class="nav-text">nginx 安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#nginx-conf-模板"><span class="nav-number">5.1.</span> <span class="nav-text">nginx.conf 模板</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自动构建脚本"><span class="nav-number">6.</span> <span class="nav-text">自动构建脚本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SSH免密"><span class="nav-number">7.</span> <span class="nav-text">SSH免密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pdsh安装"><span class="nav-number">8.</span> <span class="nav-text">pdsh安装</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -486,7 +544,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">61</span>
+          <span class="site-state-item-count">62</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -499,7 +557,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">165</span>
+        <span class="site-state-item-count">168</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>

@@ -7659,6 +7659,40 @@
 <li><strong>9004</strong>：通过 MySQL 协议与客户端通信的端口</li>
 <li><strong>9005</strong>：通过 PostgreSQL 协议与客户端通信的端口</li>
 </ul>
+<h2 id="Zookeeper集群"><a href="#Zookeeper集群" class="headerlink" title="Zookeeper集群"></a>Zookeeper集群</h2><p>ClickHouse 副本和分片都依赖 Zookeeper，Zookeeper 依赖 Java环境。</p>
+<ol>
+<li><p>下载 zookeeper</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /opt</span><br><span class="line">wget https://downloads.apache.org/zookeeper/zookeeper-3.5.9/apache-zookeeper-3.5.9-bin.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>解压并重命名</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">tar -zxvf apache-zookeeper-3.5.9-bin.tar.gz -C /opt</span><br><span class="line">mv apache-zookeeper-3.5.9-bin zookeeper</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置服务器编号</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /var/data &amp;&amp; mkdir zookeeper</span><br><span class="line"><span class="comment"># 创建文件 myid</span></span><br><span class="line"><span class="built_in">cd</span> zookeeper &amp;&amp; vim myid</span><br><span class="line"><span class="comment"># 三台服务器分别输入 1,2,3</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置 zoo.cfg 文件</p>
+<figure class="highlight clean"><table><tr><td class="code"><pre><span class="line"># 进入配置目录</span><br><span class="line">cd /opt/zookeeper/conf</span><br><span class="line"># 重命名conf这个目录下的zoo_sample.cfg为zoo.cfg</span><br><span class="line">mv zoo_sample.cfg zoo.cfg</span><br><span class="line"># 修改 zoo.cfg</span><br><span class="line">vim zoo.cfg</span><br><span class="line"></span><br><span class="line"># 修改 dataDir </span><br><span class="line">dataDir=/var/data/zookeeper</span><br><span class="line"># 添加如下内容</span><br><span class="line">#######################cluster##########################</span><br><span class="line">server<span class="number">.1</span>=clickhouse1:<span class="number">2888</span>:<span class="number">3888</span></span><br><span class="line">server<span class="number">.2</span>=clickhouse2:<span class="number">2888</span>:<span class="number">3888</span></span><br><span class="line">server<span class="number">.3</span>=clickhouse3:<span class="number">2888</span>:<span class="number">3888</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>这里通过 scp 复制配置文件，前提是需要配置免密登陆</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">scp -P 45222 -r root@clickhouse1:/opt/zookeeper/conf/zoo.cfg /opt/zookeeper/conf/</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /opt/zookeeper &amp;&amp; bin/zkServer.sh start</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>测试</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /opt/zookeeper &amp;&amp; bin/zkServer.sh status</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置开机自启动</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 编辑 /etc/rc.local ,添加</span></span><br><span class="line"><span class="built_in">source</span> /etc/profile</span><br><span class="line">/opt/zookeeper/bin/zkServer.sh start</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h2 id="ClickHouse集群"><a href="#ClickHouse集群" class="headerlink" title="ClickHouse集群"></a>ClickHouse集群</h2><p>如果需要副本的话，需要配置 Zookeeper，这里只使用分片，不需要副本。</p>
+<p>在 /etc/clickhouse-server/config.d 目录下创建 metrika-shard.xml 文件：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">yandex</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">remote_servers</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">safety_cluster</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">shard</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">replica</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">host</span>&gt;</span>clickhouse1<span class="tag">&lt;/<span class="name">host</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">port</span>&gt;</span>9000<span class="tag">&lt;/<span class="name">port</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">replica</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">shard</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">shard</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">replica</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">host</span>&gt;</span>clickhouse2<span class="tag">&lt;/<span class="name">host</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">port</span>&gt;</span>9000<span class="tag">&lt;/<span class="name">port</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">replica</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">shard</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">shard</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">replica</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">host</span>&gt;</span>clickhouse3<span class="tag">&lt;/<span class="name">host</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">port</span>&gt;</span>9000<span class="tag">&lt;/<span class="name">port</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">replica</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">shard</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">safety_cluster</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">remote_servers</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">yandex</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>文件复制：</p>
+<pre><code class="sh"></code></pre>
 ]]></content>
       <categories>
         <category>环境搭建</category>
@@ -7672,6 +7706,15 @@
     <url>/2021/09/08/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p>本文记录了服务器常用环境的一些命令总结。</p>
 <a id="more"></a>
+
+<h2 id="常用软件"><a href="#常用软件" class="headerlink" title="常用软件"></a>常用软件</h2><p><code>vim</code> 安装：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">apt-get install -y vim</span><br></pre></td></tr></table></figure>
+
+<p><code>gcc</code> 安装：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">apt-get -y install make gcc g++  zlib1g-dev libpcre3 libpcre3-dev</span><br></pre></td></tr></table></figure>
+
+<p>模块安装：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">aptitude -y install libpcre3 libpcre3-dev libpcrecpp0 libssl-dev zlib1g-dev</span><br></pre></td></tr></table></figure>
 
 <h2 id="时间同步"><a href="#时间同步" class="headerlink" title="时间同步"></a>时间同步</h2><p><code>ntpdata</code> 安装：</p>
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">apt-get install ntpdate</span><br></pre></td></tr></table></figure>
@@ -7692,8 +7735,9 @@
 <figure class="highlight stata"><table><tr><td class="code"><pre><span class="line"><span class="keyword">cat</span> /etc/rc.<span class="keyword">local</span></span><br></pre></td></tr></table></figure>
 
 <p>如果没有，则添加：</p>
-<figure class="highlight awk"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/bin/sh -e</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># rc.local</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This script is executed at the end of each multiuser runlevel.</span></span><br><span class="line"><span class="comment"># value on error.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># In order to enable or disable this script just change the execution</span></span><br><span class="line"><span class="comment"># bits.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># By default this script does nothing.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">exit</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight awk"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/bin/sh -e#!/bin/bash</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># rc.local</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># This script is executed at the end of each multiuser runlevel.</span></span><br><span class="line"><span class="comment"># value on error.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># In order to enable or disable this script just change the execution</span></span><br><span class="line"><span class="comment"># bits.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># By default this script does nothing.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">exit</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
 
+<p><strong>注意</strong>：第一行必须是 <code>#!/bin/bash</code>，否则 执行不了 <code>source /etc/profile</code></p>
 <p>然后赋予权限：</p>
 <figure class="highlight h"><table><tr><td class="code"><pre><span class="line">chmod +x /etc/rc.local</span><br></pre></td></tr></table></figure>
 
@@ -7785,13 +7829,90 @@
 <p>构建内容：</p>
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">server_zip_path=<span class="string">"/usr/websync/safety_transfer_formal"</span></span><br><span class="line">server_path=<span class="string">"/usr/safety_transfer"</span></span><br><span class="line"></span><br><span class="line">nowtime=`date --date=<span class="string">'0 days ago'</span> <span class="string">"+%Y-%m-%d %H:%M:%S"</span>`</span><br><span class="line"><span class="built_in">echo</span> nowtime=<span class="variable">$nowtime</span></span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$server_zip_path</span></span><br><span class="line">curpkg=`sed -n <span class="string">'1p'</span> version_cur`</span><br><span class="line">newpkg=`sed -n <span class="string">'1p'</span> version`</span><br><span class="line"><span class="built_in">echo</span> curpkg=<span class="variable">$curpkg</span></span><br><span class="line"><span class="built_in">echo</span> newpkg=<span class="variable">$newpkg</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ <span class="variable">$curpkg</span> -ne <span class="variable">$newpkg</span> ];<span class="keyword">then</span></span><br><span class="line">    <span class="comment"># 检测zip文件是否存在</span></span><br><span class="line">    <span class="keyword">if</span> [[ -f <span class="variable">$newpkg</span>.zip ]];<span class="keyword">then</span></span><br><span class="line">        <span class="built_in">cd</span> <span class="variable">$server_zip_path</span></span><br><span class="line">        version=`cat version`</span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$version</span></span><br><span class="line">        rm -r <span class="variable">$server_path</span>/build/SafetyTransfer-1.0.jar</span><br><span class="line">        unzip -o <span class="variable">$server_zip_path</span>/<span class="variable">$version</span>.zip -d <span class="variable">$server_path</span>/build</span><br><span class="line"></span><br><span class="line">        <span class="built_in">cd</span> <span class="variable">$server_path</span></span><br><span class="line">        <span class="built_in">source</span> /etc/profile</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"构建docker镜像..."</span></span><br><span class="line">        docker-compose build</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"构建docker镜像成功"</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"项目启动..."</span></span><br><span class="line">        docker-compose up -d</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"项目启动成功"</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"清除已停止的容器、未被使用的卷、未被关联的网络、镜像..."</span></span><br><span class="line">        docker image prune -a -f</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"清除已停止的容器、未被使用的卷、未被关联的网络、镜像成功"</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$newpkg</span> &gt; <span class="variable">$server_zip_path</span>/version_cur</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$newpkg</span><span class="string">".zip 不存在"</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="variable">$nowtime</span><span class="string">" 版本号一致，无需更新"</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="built_in">exit</span> 0</span><br></pre></td></tr></table></figure>
 
+<h2 id="SSH免密"><a href="#SSH免密" class="headerlink" title="SSH免密"></a>SSH免密</h2><ol>
+<li><p>生成密钥</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -P <span class="string">''</span> -f ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>查看公钥</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">cat ~/.ssh/id_rsa.pub</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>认证。注意：如果 A 需要SSH免密登陆 B，需要将 A 的公钥写入 B 的 ~/.ssh/authorized_keys 文件中</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 写入公钥</span></span><br><span class="line">vim ~/.ssh/authorized_keys</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改SSH配置</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">vim /etc/ssh/sshd_config</span><br><span class="line"><span class="comment"># 允许 root 用户登录：PermitRootLogin yes</span></span><br><span class="line"><span class="comment"># 在AllowUsers 添加 root@10.104.122.26</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>重载配置</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">/etc/init.d/ssh reload</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h2 id="pdsh安装"><a href="#pdsh安装" class="headerlink" title="pdsh安装"></a>pdsh安装</h2><p>pdsh 默认不支持 SSH 修改端口。 </p>
+<ol>
+<li><p>下载</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">wget https://hub.fastgit.org/chaos/pdsh/releases/download/pdsh-2.34/pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>解压</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">tar -zxvf pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编译</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> pdsh-2.34/</span><br><span class="line">./configure --without-rsh --with-ssh --with-machines=/etc/pdsh/machines --with-dshgroups --with-timeout=10</span><br><span class="line">make &amp;&amp; make install</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>测试安装是否成功</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">pdsh -V</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>设置pdsh主机</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">vim /etc/pdsh/machines</span><br><span class="line"><span class="comment"># 添加主机，例如：</span></span><br><span class="line">clickhouse1</span><br><span class="line">clickhouse2</span><br><span class="line">clickhouse3</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>测试使用</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">pdsh -a free -m</span><br><span class="line">pdsh -a <span class="string">"cd /usr/local &amp;&amp; ls -l"</span></span><br></pre></td></tr></table></figure>
 
 
 
+</li>
+</ol>
+<ol start="7">
+<li><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">wget https://hub.fastgit.org/chaos/pdsh/releases/download/pdsh-2.34/pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
 
+
+
+</li>
+</ol>
 ]]></content>
       <categories>
         <category>环境搭建</category>
       </categories>
+      <tags>
+        <tag>nginx</tag>
+        <tag>pdsh</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux服务器性能测试</title>
+    <url>/2021/09/25/Linux%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/</url>
+    <content><![CDATA[<p>Linux服务器性能测试方法汇总。</p>
+<a id="more"></a>
+
+<h2 id="bench-sh"><a href="#bench-sh" class="headerlink" title="bench.sh"></a>bench.sh</h2><p>查看CPU Model（CPU型号）、CPU Cores（核数）、CPU Frequency（主频）、Total Disk（磁盘容量）、Total Mem（内存）、Swap（虚拟内存）、系统发行版本、Linux内核、地域节点、磁盘I/O读写速度及云服务器上传下载速度测试：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">wget -qO- bench.sh | bash</span><br></pre></td></tr></table></figure>
+
+<p>输出结果：</p>
+<img src="/2021/09/25/Linux%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/bench.png" class="" title="bench">
+
+<h2 id="unixbench-sh"><a href="#unixbench-sh" class="headerlink" title="unixbench.sh"></a>unixbench.sh</h2><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">wget --no-check-certificate https://hub.fastgit.org/teddysun/across/raw/master/unixbench.sh</span><br><span class="line">chmod +x unixbench.sh</span><br><span class="line">./unixbench.sh</span><br></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line">------------------------------------------------------------------------</span><br><span class="line">Benchmark Run: Sat Sep <span class="number">25</span> <span class="number">2021</span> <span class="number">19</span>:<span class="number">26</span>:<span class="number">05</span> - <span class="number">19</span>:<span class="number">54</span>:<span class="number">08</span></span><br><span class="line"><span class="number">24</span> CPUs <span class="keyword">in</span> system; running <span class="number">1</span> parallel copy of tests</span><br><span class="line"></span><br><span class="line">Dhrystone <span class="number">2</span> using register variables       <span class="number">36300841.3</span> lps   (<span class="number">10.0</span> s, <span class="number">7</span> samples)</span><br><span class="line">Double-Precision Whetstone                     <span class="number">4484.8</span> MWIPS (<span class="number">9.8</span> s, <span class="number">7</span> samples)</span><br><span class="line">Execl Throughput                               <span class="number">3512.4</span> lps   (<span class="number">30.0</span> s, <span class="number">2</span> samples)</span><br><span class="line">File Copy <span class="number">1024</span> bufsize <span class="number">2000</span> maxblocks        <span class="number">745701.0</span> KBps  (<span class="number">30.0</span> s, <span class="number">2</span> samples)</span><br><span class="line">File Copy <span class="number">256</span> bufsize <span class="number">500</span> maxblocks          <span class="number">195219.3</span> KBps  (<span class="number">30.0</span> s, <span class="number">2</span> samples)</span><br><span class="line">File Copy <span class="number">4096</span> bufsize <span class="number">8000</span> maxblocks       <span class="number">2269190.7</span> KBps  (<span class="number">30.0</span> s, <span class="number">2</span> samples)</span><br><span class="line">Pipe Throughput                             <span class="number">1054151.9</span> lps   (<span class="number">10.0</span> s, <span class="number">7</span> samples)</span><br><span class="line">Pipe-based Context Switching                 <span class="number">132766.6</span> lps   (<span class="number">10.0</span> s, <span class="number">7</span> samples)</span><br><span class="line">Process Creation                              <span class="number">10961.7</span> lps   (<span class="number">30.0</span> s, <span class="number">2</span> samples)</span><br><span class="line">Shell Scripts (<span class="number">1</span> concurrent)                  <span class="number">11558.5</span> lpm   (<span class="number">60.0</span> s, <span class="number">2</span> samples)</span><br><span class="line">Shell Scripts (<span class="number">8</span> concurrent)                   <span class="number">6579.6</span> lpm   (<span class="number">60.0</span> s, <span class="number">2</span> samples)</span><br><span class="line">System Call Overhead                         <span class="number">777922.2</span> lps   (<span class="number">10.0</span> s, <span class="number">7</span> samples)</span><br><span class="line"></span><br><span class="line">System Benchmarks Index Values               BASELINE       RESULT    INDEX</span><br><span class="line">Dhrystone <span class="number">2</span> using register variables         <span class="number">116700.0</span>   <span class="number">36300841.3</span>   <span class="number">3110.6</span></span><br><span class="line">Double-Precision Whetstone                       <span class="number">55.0</span>       <span class="number">4484.8</span>    <span class="number">815.4</span></span><br><span class="line">Execl Throughput                                 <span class="number">43.0</span>       <span class="number">3512.4</span>    <span class="number">816.8</span></span><br><span class="line">File Copy <span class="number">1024</span> bufsize <span class="number">2000</span> maxblocks          <span class="number">3960.0</span>     <span class="number">745701.0</span>   <span class="number">1883.1</span></span><br><span class="line">File Copy <span class="number">256</span> bufsize <span class="number">500</span> maxblocks            <span class="number">1655.0</span>     <span class="number">195219.3</span>   <span class="number">1179.6</span></span><br><span class="line">File Copy <span class="number">4096</span> bufsize <span class="number">8000</span> maxblocks          <span class="number">5800.0</span>    <span class="number">2269190.7</span>   <span class="number">3912.4</span></span><br><span class="line">Pipe Throughput                               <span class="number">12440.0</span>    <span class="number">1054151.9</span>    <span class="number">847.4</span></span><br><span class="line">Pipe-based Context Switching                   <span class="number">4000.0</span>     <span class="number">132766.6</span>    <span class="number">331.9</span></span><br><span class="line">Process Creation                                <span class="number">126.0</span>      <span class="number">10961.7</span>    <span class="number">870.0</span></span><br><span class="line">Shell Scripts (<span class="number">1</span> concurrent)                     <span class="number">42.4</span>      <span class="number">11558.5</span>   <span class="number">2726.1</span></span><br><span class="line">Shell Scripts (<span class="number">8</span> concurrent)                      <span class="number">6.0</span>       <span class="number">6579.6</span>  <span class="number">10966.1</span></span><br><span class="line">System Call Overhead                          <span class="number">15000.0</span>     <span class="number">777922.2</span>    <span class="number">518.6</span></span><br><span class="line">                                                                   ========</span><br><span class="line">System Benchmarks Index Score                                        <span class="number">1421.9</span></span><br><span class="line"></span><br><span class="line">------------------------------------------------------------------------</span><br><span class="line">Benchmark Run: Sat Sep <span class="number">25</span> <span class="number">2021</span> <span class="number">19</span>:<span class="number">54</span>:<span class="number">08</span> - <span class="number">19</span>:<span class="number">54</span>:<span class="number">08</span></span><br><span class="line"><span class="number">24</span> CPUs <span class="keyword">in</span> system; running <span class="number">24</span> parallel copies of tests</span><br></pre></td></tr></table></figure>
+
+<h2 id="相关资料"><a href="#相关资料" class="headerlink" title="相关资料"></a>相关资料</h2><ol>
+<li><a href="https://github.com/haydenjames/bench-scripts" target="_blank" rel="noopener">bench-scripts</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>环境搭建</category>
+      </categories>
+      <tags>
+        <tag>性能测试</tag>
+      </tags>
   </entry>
 </search>
