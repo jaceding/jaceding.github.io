@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/myfavicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/myfavicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/myfavicon.ico">
+  <link rel="mask-icon" href="/images/myfavicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"jaceding.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Java程序异常排查的一些基本步骤。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java程序异常排查">
+<meta property="og:url" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/index.html">
+<meta property="og:site_name" content="Jace Ding">
+<meta property="og:description" content="Java程序异常排查的一些基本步骤。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/1.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/2.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/3.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/4.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/5.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/6.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/7.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/8.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/9.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/10.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/11.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/12.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/13.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/14.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/15.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/16.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/17.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/18.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/19.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/20.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/21.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/22.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/23.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/24.png">
+<meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/25.png">
+<meta property="article:published_time" content="2021-09-27T08:10:48.000Z">
+<meta property="article:modified_time" content="2021-09-28T13:01:52.387Z">
+<meta property="article:author" content="Jace Ding">
+<meta property="article:tag" content="CPU占用过高">
+<meta property="article:tag" content="内存溢出">
+<meta property="article:tag" content="jconsole">
+<meta property="article:tag" content="jvisualvm">
+<meta property="article:tag" content="jprofiler">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/1.png">
+
+<link rel="canonical" href="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Java程序异常排查 | Jace Ding</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?a5b3b0af00f4af4a78fb52c6720825d5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Jace Ding</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Jace Ding">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jace Ding">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java程序异常排查
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-09-27 16:10:48" itemprop="dateCreated datePublished" datetime="2021-09-27T16:10:48+08:00">2021-09-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Java程序异常排查的一些基本步骤。</p>
+<a id="more"></a>
+
+<h2 id="CPU占用过高排查"><a href="#CPU占用过高排查" class="headerlink" title="CPU占用过高排查"></a>CPU占用过高排查</h2><p>CPU 占用过高的原因通常有以下几个：</p>
+<ul>
+<li>线程中有比较耗时的计算</li>
+<li>系统发生了频繁的 Full GC</li>
+</ul>
+<h3 id="排查步骤"><a href="#排查步骤" class="headerlink" title="排查步骤"></a>排查步骤</h3><ol>
+<li><p>通过 <code>top</code> 命令找到 CPU占用高的 Java 应用程序</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/1.png" class="">
+</li>
+<li><p>使用 <code>top -H -p PID</code> 查看对应进程的哪个线程占用CPU过高，例如：<code>top -H -p 22092</code></p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/2.png" class="">
+</li>
+<li><p>使用 <code>printf &quot;%x\n&quot; tid</code> 将 CPU 占用高的线程 ID 转换为16进制格式</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/3.png" class="">
+</li>
+<li><p>使用 <code>jstack pid &gt;&gt; thread.txt</code> 导出线程堆栈信息，例如：<code>jstack 22092 &gt;&gt; thread.txt</code></p>
+</li>
+<li><p>从线程堆栈信息中查找 CPU 占用高的16进制线程 ID，找到对应的线程栈，分析线程栈信息</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat thread.txt | grep -C 20 6fba</span><br></pre></td></tr></table></figure>
+
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/4.png" class="">
+
+</li>
+</ol>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ul>
+<li><p>使用 <code>ps -mp pid -o THREAD,tid,time | sort -rn</code> 可以查看占用CPU高的线程</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/5.png" class="">
+</li>
+<li><p>使用 <code>jstat -gcutil pid</code> 或 <code>jstat -gc pid</code>  可以查看 GC 信息</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/6.png" class="">
+
+</li>
+</ul>
+<h2 id="内存溢出排查"><a href="#内存溢出排查" class="headerlink" title="内存溢出排查"></a>内存溢出排查</h2><p>JVM 发生 OOM 时自动生成 hprof 文件 -&gt; 增加启动参数：<code>-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs</code> </p>
+<ul>
+<li>-XX:+HeapDumpOnOutOfMemoryError：表示当JVM发生OOM时，自动生成 hprof 文件。</li>
+<li>-XX:HeapDumpPath=${目录}：表示生成DUMP文件的路径，也可以指定文件名称。</li>
+</ul>
+<p>如下：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=512m -Xms2g -Xmx2g -Xss256k -XX:SurvivorRatio=8 -XX:NewRatio=2 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -jar app.jar</span><br></pre></td></tr></table></figure>
+
+<h3 id="生成-hprof-文件"><a href="#生成-hprof-文件" class="headerlink" title="生成 hprof 文件"></a>生成 hprof 文件</h3><p>生成 hprof 文件</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format=b,file=202109281524.hprof 38426</span><br></pre></td></tr></table></figure>
+
+<p>生成 dump 文件</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format=b,file=202109281524.dump 38426</span><br></pre></td></tr></table></figure>
+
+<h3 id="分析-java-pidxxx-hprof-文件"><a href="#分析-java-pidxxx-hprof-文件" class="headerlink" title="分析 java_pidxxx.hprof 文件"></a>分析 java_pidxxx.hprof 文件</h3><p>这里使用 Jprofile 分析 hprof 文件</p>
+<ol>
+<li><p>使用 jprofile 打开 java_pidxxx.hprof 文件，如下：</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/7.png" class="">
+</li>
+<li><p>选择 Biggest Objects，查找大对象信息</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/8.png" class="">
+
+</li>
+</ol>
+<h3 id="其他-1"><a href="#其他-1" class="headerlink" title="其他"></a>其他</h3><ul>
+<li><p>使用 <code>jmap -heap pid</code> 打印 JVM 的内存状态</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/9.png" class="">
+
+</li>
+</ul>
+<h2 id="远程监控-Java-程序"><a href="#远程监控-Java-程序" class="headerlink" title="远程监控 Java 程序"></a>远程监控 Java 程序</h2><p>在需监控的远程 Java 程序启动脚本中加入：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Dcom.sun.management.jmxremote=<span class="literal">true</span> -Djava.rmi.server.hostname=10.86.52.68 -Dcom.sun.management.jmxremote.port=28080 -Dcom.sun.management.jmxremote.ssl=<span class="literal">false</span> -Dcom.sun.management.jmxremote.authenticate=<span class="literal">false</span></span><br></pre></td></tr></table></figure>
+
+<p>选项：</p>
+<ul>
+<li>-Dcom.sun.management.jmxremote=true：表示开启JVM远程监控</li>
+<li>-Djava.rmi.server.hostname=10.86.52.68：设置监控的 IP</li>
+<li>-Dcom.sun.management.jmxremote.port=28080：设置监听的端口</li>
+<li>-Dcom.sun.management.jmxremote.ssl=false：设置是否启用 SSL</li>
+<li>-Dcom.sun.management.jmxremote.authenticate=false：设置是否需要用户密码验证</li>
+</ul>
+<h3 id="使用-jconsole-远程连接"><a href="#使用-jconsole-远程连接" class="headerlink" title="使用 jconsole 远程连接"></a>使用 jconsole 远程连接</h3><ol>
+<li><p>在 JDK 安装路径下的 bin 目录中可以找到 jconsole.exe，打开填入相关信息。</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/10.png" class="">
+</li>
+<li><p>选择不安全链接</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/11.png" class="">
+
+</li>
+</ol>
+<h3 id="使用-jvisualvm-远程连接"><a href="#使用-jvisualvm-远程连接" class="headerlink" title="使用 jvisualvm 远程连接"></a>使用 jvisualvm 远程连接</h3><ol>
+<li><p>在 JDK 安装路径下的 bin 目录中可以找到 jvisualvm，打开选择文件，添加 JMX 连接，填入相关信息。</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/12.png" class="">
+</li>
+<li><p>连接成功如下</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/13.png" class="">
+
+</li>
+</ol>
+<h2 id="jprofiler-远程监控-Java-程序"><a href="#jprofiler-远程监控-Java-程序" class="headerlink" title="jprofiler 远程监控 Java 程序"></a>jprofiler 远程监控 Java 程序</h2><p>注意：Windows 和 Linux的 都必须安装 jprofiler，并且版本必须一致。</p>
+<p><a href="https://www.ej-technologies.com/resources/jprofiler/help/doc/main/introduction.html" target="_blank" rel="noopener">jprofiler 官方文档</a></p>
+<p>基本步骤如下：</p>
+<ol>
+<li><p>Windows 上安装 jprofiler，这一步省略</p>
+</li>
+<li><p>Linux 上安装 jprofiler 如下：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /opt &amp;&amp; wget https://download-gcdn.ej-technologies.com/jprofiler/jprofiler_linux_11_1_4.tar.gz</span><br><span class="line">tar -zxvf jprofiler_linux_11_1_4.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>执行 jpenable：<code>cd /opt/jprofiler11.1.4/ &amp;&amp; bin/jpenable</code>。先输入 1，再输入监听的端口号 28082。</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/14.png" class="">
+</li>
+<li><p>Java 程序启动命令后添加相关配置（注意：需要在 -jar 之后添加）</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-agentlib:jprofilerti=port=28082 -Xbootclasspath/a:/opt/jprofiler11.1.4/bin/agent.jar</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在 Windows 打开 jprofiler，选择 Session -&gt; Integration Wizards -&gt; New remote Integration。</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/15.png" class="">
+</li>
+<li><p>选择 远程连接，修改相关选项</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/16.png" class="">
+</li>
+<li><p>设置 JVM 版本</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/17.png" class="">
+</li>
+<li><p>选择直接连接，并填入服务器 IP，注意不用填端口</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/18.png" class="">
+</li>
+<li><p>设置 Linux 上 jprofiler 的安装目录</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/19.png" class="">
+</li>
+<li><p>直接下一步</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/20.png" class="">
+</li>
+<li><p>输入端口</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/21.png" class="">
+</li>
+<li><p>直接下一步</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/22.png" class="">
+</li>
+<li><p>完成配置</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/23.png" class="">
+</li>
+<li><p>选择 ok</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/24.png" class="">
+</li>
+<li><p>完成后效果如下</p>
+<img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/25.png" class="">
+
+
+
+
+
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Jace Ding 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="Jace Ding 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/CPU%E5%8D%A0%E7%94%A8%E8%BF%87%E9%AB%98/" rel="tag"># CPU占用过高</a>
+              <a href="/tags/%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA/" rel="tag"># 内存溢出</a>
+              <a href="/tags/jconsole/" rel="tag"># jconsole</a>
+              <a href="/tags/jvisualvm/" rel="tag"># jvisualvm</a>
+              <a href="/tags/jprofiler/" rel="tag"># jprofiler</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/09/25/Linux%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/" rel="prev" title="Linux服务器性能测试">
+      <i class="fa fa-chevron-left"></i> Linux服务器性能测试
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CPU占用过高排查"><span class="nav-number">1.</span> <span class="nav-text">CPU占用过高排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#排查步骤"><span class="nav-number">1.1.</span> <span class="nav-text">排查步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他"><span class="nav-number">1.2.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存溢出排查"><span class="nav-number">2.</span> <span class="nav-text">内存溢出排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#生成-hprof-文件"><span class="nav-number">2.1.</span> <span class="nav-text">生成 hprof 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析-java-pidxxx-hprof-文件"><span class="nav-number">2.2.</span> <span class="nav-text">分析 java_pidxxx.hprof 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他-1"><span class="nav-number">2.3.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#远程监控-Java-程序"><span class="nav-number">3.</span> <span class="nav-text">远程监控 Java 程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-jconsole-远程连接"><span class="nav-number">3.1.</span> <span class="nav-text">使用 jconsole 远程连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-jvisualvm-远程连接"><span class="nav-number">3.2.</span> <span class="nav-text">使用 jvisualvm 远程连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jprofiler-远程监控-Java-程序"><span class="nav-number">4.</span> <span class="nav-text">jprofiler 远程监控 Java 程序</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jace Ding"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Jace Ding</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">173</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jaceding" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jaceding" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:931977674@qq.com" title="E-Mail → mailto:931977674@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jace Ding</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
