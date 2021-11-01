@@ -7961,6 +7961,8 @@
 
 </li>
 </ol>
+<h3 id="快速排查"><a href="#快速排查" class="headerlink" title="快速排查"></a>快速排查</h3><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">wget --no-check-certificate https://raw.github.com/oldratlee/useful-scripts/release-2.x/bin/show-busy-java-threads</span><br><span class="line">chmod +x show-busy-java-threads</span><br><span class="line"></span><br><span class="line">bash show-busy-java-threads</span><br></pre></td></tr></table></figure>
+
 <h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ul>
 <li><p>使用 <code>ps -mp pid -o THREAD,tid,time | sort -rn</code> 可以查看占用CPU高的线程</p>
 <img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/5.png" class="">
@@ -8000,6 +8002,18 @@
 
 </li>
 </ul>
+<h2 id="GC日志分析"><a href="#GC日志分析" class="headerlink" title="GC日志分析"></a>GC日志分析</h2><p>在 Java 程序启动脚本中加入：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">-XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/logs/gc.log</span><br></pre></td></tr></table></figure>
+
+<p>选项：</p>
+<ul>
+<li>-XX:+PrintGC：输出GC日志</li>
+<li>-XX:+PrintGCDetails：输出GC的详细日志</li>
+<li>-XX:+PrintGCTimeStamps：输出GC的时间戳（以基准时间的形式）</li>
+<li>-XX:+PrintGCDateStamps：输出GC的时间戳（以日期的形式，如 2013-05-04T21:53:59.234+0800）</li>
+<li>-XX:+PrintHeapAtGC：在进行GC的前后打印出堆的信息</li>
+<li>-Xloggc:../logs/gc.log：GC日志文件的输出路径</li>
+</ul>
 <h2 id="远程监控-Java-程序"><a href="#远程监控-Java-程序" class="headerlink" title="远程监控 Java 程序"></a>远程监控 Java 程序</h2><p>在需监控的远程 Java 程序启动脚本中加入：</p>
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">-Dcom.sun.management.jmxremote=<span class="literal">true</span> -Djava.rmi.server.hostname=10.86.52.68 -Dcom.sun.management.jmxremote.port=28080 -Dcom.sun.management.jmxremote.ssl=<span class="literal">false</span> -Dcom.sun.management.jmxremote.authenticate=<span class="literal">false</span></span><br></pre></td></tr></table></figure>
 
@@ -8020,7 +8034,8 @@
 
 </li>
 </ol>
-<h3 id="使用-jvisualvm-远程连接"><a href="#使用-jvisualvm-远程连接" class="headerlink" title="使用 jvisualvm 远程连接"></a>使用 jvisualvm 远程连接</h3><ol>
+<h3 id="使用-jvisualvm-远程连接"><a href="#使用-jvisualvm-远程连接" class="headerlink" title="使用 jvisualvm 远程连接"></a>使用 jvisualvm 远程连接</h3><p>jvisualvm 作为 jconsole 的升级版，提供了更多信息。使用如下：</p>
+<ol>
 <li><p>在 JDK 安装路径下的 bin 目录中可以找到 jvisualvm，打开选择文件，添加 JMX 连接，填入相关信息。</p>
 <img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/12.png" class="">
 </li>
@@ -8093,6 +8108,45 @@
         <tag>jconsole</tag>
         <tag>jvisualvm</tag>
         <tag>jprofiler</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Nginx常见问题</title>
+    <url>/2020/02/03/Nginx%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<p>本文记录了使用 Nginx 遇到的一些问题</p>
+<a id="more"></a>
+
+<h2 id="强制Http跳转到Https访问"><a href="#强制Http跳转到Https访问" class="headerlink" title="强制Http跳转到Https访问"></a>强制Http跳转到Https访问</h2><p>分为两种情况：</p>
+<ol>
+<li>从<code>http://cip.wanxinwangluo.com/</code>跳转<code>https://cip.wanxinwangluo.com/</code></li>
+<li>从<code>http://cip.wanxinwangluo.com:18182/</code>跳转<code>https://cip.wanxinwangluo.com:18182/</code></li>
+</ol>
+<h3 id="第一种情况"><a href="#第一种情况" class="headerlink" title="第一种情况"></a>第一种情况</h3><p>通过监听80端口，然后重定向到Https（默认443端口）。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name cip.wanxinwangluo.com;</span><br><span class="line">    return 301 https://$server_name$request_uri;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl http2;</span><br><span class="line">    server_name cip.wanxinwangluo.com;</span><br><span class="line">    ssl_protocols TLSv1.3 TLSv1.2;</span><br><span class="line">    ssl_ciphers EECDH:+CHACHA20:+aRSA:+AES256:!NULL:!ARIA:!CAMELLIA:!SHA:!MD5;</span><br><span class="line">    server_tokens off;</span><br><span class="line"></span><br><span class="line">    access_log /var/log/nginx/page_access main;</span><br><span class="line">    error_log /var/log/nginx/page_error;</span><br><span class="line">    ssl_certificate /usr/cert/wanxin/wanxinwangluo.com.cer;</span><br><span class="line">    ssl_certificate_key /usr/cert/wanxin/wanxinwangluo.com.key;</span><br><span class="line">   </span><br><span class="line">    location / &#123;</span><br><span class="line">        root   html;</span><br><span class="line">        index  index.html index.htm;</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="第二种情况"><a href="#第二种情况" class="headerlink" title="第二种情况"></a>第二种情况</h3><p>当网站只允许<code>https</code>访问时，用<code>http</code>访问时<code>nginx</code>会报出497错误码。</p>
+<p>通过 error_page 命令将497状态码的链接重定向到<code>https://cip.wanxinwangluo.com:18182/</code>这个域名上</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">upstream libreSpeed &#123;</span><br><span class="line">    server 10.86.52.77:80;</span><br><span class="line">    server 10.86.122.208:80;</span><br><span class="line">    keepalive 64;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 18182 ssl http2;</span><br><span class="line">    server_name cip.wanxinwangluo.com;</span><br><span class="line">    ssl_protocols TLSv1.3 TLSv1.2;</span><br><span class="line">    ssl_ciphers EECDH:+CHACHA20:+aRSA:+AES256:!NULL:!ARIA:!CAMELLIA:!SHA:!MD5;</span><br><span class="line">    server_tokens off;</span><br><span class="line"></span><br><span class="line">    access_log /var/log/nginx/libreSpeed_access main;</span><br><span class="line">    error_log /var/log/nginx/libreSpeed_error;</span><br><span class="line">    ssl_certificate /usr/cert/wanxin/wanxinwangluo.com.cer;</span><br><span class="line">    ssl_certificate_key /usr/cert/wanxin/wanxinwangluo.com.key;</span><br><span class="line"></span><br><span class="line">    error_page 497 https://$host:$server_port$uri$is_args$args;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        add_header Access-Control-Allow-Origin *;</span><br><span class="line">        add_header Access-Control-Allow-Headers X-Requested-With;</span><br><span class="line">        add_header Access-Control-Allow-Methods GET,POST,OPTIONS;</span><br><span class="line">        add_header Cache-Control no-cache;</span><br><span class="line">        add_header X-XSS-Protection "1;mode=block";</span><br><span class="line">        add_header x-frame-options SAMEORIGIN;</span><br><span class="line">        proxy_hide_header X-Powered-By;</span><br><span class="line">        proxy_hide_header "cache-control";</span><br><span class="line">        proxy_hide_header Expires;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header REMOTE-HOST $remote_addr;</span><br><span class="line">        proxy_set_header Host  $http_host;</span><br><span class="line">        proxy_set_header X-Nginx-Proxy true;</span><br><span class="line">        proxy_set_header Connection "";</span><br><span class="line">        proxy_http_version 1.1;</span><br><span class="line">        proxy_pass http://libreSpeed;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="两次post请求过快出现499"><a href="#两次post请求过快出现499" class="headerlink" title="两次post请求过快出现499"></a>两次post请求过快出现499</h2><p>HTTP状态码 499 的意思是：<strong>客户端发起请求后，一段时间内没有收到代理服务器的应答，导致连接失败</strong>。</p>
+<p>有两种可能：</p>
+<ol>
+<li><strong>代理服务器认为客户端发起的请求过于危险，所以主动给断了。（例如两次Post请求过快）</strong></li>
+<li><strong>代理服务器实在么得办法连接到其他服务，导致timeout。</strong></li>
+</ol>
+<p>针对第一种情况，可以在 Nginx 中添加以下配置：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">proxy_ignore_client_abort on;   <span class="comment"># 代理服务器不主动关闭连接</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+]]></content>
+      <categories>
+        <category>Tips</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
       </tags>
   </entry>
 </search>

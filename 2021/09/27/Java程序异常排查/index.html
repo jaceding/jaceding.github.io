@@ -53,7 +53,7 @@
 <meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/24.png">
 <meta property="og:image" content="https://jaceding.github.io/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/25.png">
 <meta property="article:published_time" content="2021-09-27T08:10:48.000Z">
-<meta property="article:modified_time" content="2021-09-28T13:01:52.387Z">
+<meta property="article:modified_time" content="2021-11-01T08:52:54.457Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="CPU占用过高">
 <meta property="article:tag" content="内存溢出">
@@ -306,6 +306,8 @@
 
 </li>
 </ol>
+<h3 id="快速排查"><a href="#快速排查" class="headerlink" title="快速排查"></a>快速排查</h3><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">wget --no-check-certificate https://raw.github.com/oldratlee/useful-scripts/release-2.x/bin/show-busy-java-threads</span><br><span class="line">chmod +x show-busy-java-threads</span><br><span class="line"></span><br><span class="line">bash show-busy-java-threads</span><br></pre></td></tr></table></figure>
+
 <h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><ul>
 <li><p>使用 <code>ps -mp pid -o THREAD,tid,time | sort -rn</code> 可以查看占用CPU高的线程</p>
 <img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/5.png" class="">
@@ -345,6 +347,18 @@
 
 </li>
 </ul>
+<h2 id="GC日志分析"><a href="#GC日志分析" class="headerlink" title="GC日志分析"></a>GC日志分析</h2><p>在 Java 程序启动脚本中加入：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/logs/gc.log</span><br></pre></td></tr></table></figure>
+
+<p>选项：</p>
+<ul>
+<li>-XX:+PrintGC：输出GC日志</li>
+<li>-XX:+PrintGCDetails：输出GC的详细日志</li>
+<li>-XX:+PrintGCTimeStamps：输出GC的时间戳（以基准时间的形式）</li>
+<li>-XX:+PrintGCDateStamps：输出GC的时间戳（以日期的形式，如 2013-05-04T21:53:59.234+0800）</li>
+<li>-XX:+PrintHeapAtGC：在进行GC的前后打印出堆的信息</li>
+<li>-Xloggc:../logs/gc.log：GC日志文件的输出路径</li>
+</ul>
 <h2 id="远程监控-Java-程序"><a href="#远程监控-Java-程序" class="headerlink" title="远程监控 Java 程序"></a>远程监控 Java 程序</h2><p>在需监控的远程 Java 程序启动脚本中加入：</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Dcom.sun.management.jmxremote=<span class="literal">true</span> -Djava.rmi.server.hostname=10.86.52.68 -Dcom.sun.management.jmxremote.port=28080 -Dcom.sun.management.jmxremote.ssl=<span class="literal">false</span> -Dcom.sun.management.jmxremote.authenticate=<span class="literal">false</span></span><br></pre></td></tr></table></figure>
 
@@ -365,7 +379,8 @@
 
 </li>
 </ol>
-<h3 id="使用-jvisualvm-远程连接"><a href="#使用-jvisualvm-远程连接" class="headerlink" title="使用 jvisualvm 远程连接"></a>使用 jvisualvm 远程连接</h3><ol>
+<h3 id="使用-jvisualvm-远程连接"><a href="#使用-jvisualvm-远程连接" class="headerlink" title="使用 jvisualvm 远程连接"></a>使用 jvisualvm 远程连接</h3><p>jvisualvm 作为 jconsole 的升级版，提供了更多信息。使用如下：</p>
+<ol>
 <li><p>在 JDK 安装路径下的 bin 目录中可以找到 jvisualvm，打开选择文件，添加 JMX 连接，填入相关信息。</p>
 <img src="/2021/09/27/Java%E7%A8%8B%E5%BA%8F%E5%BC%82%E5%B8%B8%E6%8E%92%E6%9F%A5/12.png" class="">
 </li>
@@ -532,7 +547,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CPU占用过高排查"><span class="nav-number">1.</span> <span class="nav-text">CPU占用过高排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#排查步骤"><span class="nav-number">1.1.</span> <span class="nav-text">排查步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他"><span class="nav-number">1.2.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存溢出排查"><span class="nav-number">2.</span> <span class="nav-text">内存溢出排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#生成-hprof-文件"><span class="nav-number">2.1.</span> <span class="nav-text">生成 hprof 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析-java-pidxxx-hprof-文件"><span class="nav-number">2.2.</span> <span class="nav-text">分析 java_pidxxx.hprof 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他-1"><span class="nav-number">2.3.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#远程监控-Java-程序"><span class="nav-number">3.</span> <span class="nav-text">远程监控 Java 程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-jconsole-远程连接"><span class="nav-number">3.1.</span> <span class="nav-text">使用 jconsole 远程连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-jvisualvm-远程连接"><span class="nav-number">3.2.</span> <span class="nav-text">使用 jvisualvm 远程连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jprofiler-远程监控-Java-程序"><span class="nav-number">4.</span> <span class="nav-text">jprofiler 远程监控 Java 程序</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CPU占用过高排查"><span class="nav-number">1.</span> <span class="nav-text">CPU占用过高排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#排查步骤"><span class="nav-number">1.1.</span> <span class="nav-text">排查步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#快速排查"><span class="nav-number">1.2.</span> <span class="nav-text">快速排查</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他"><span class="nav-number">1.3.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存溢出排查"><span class="nav-number">2.</span> <span class="nav-text">内存溢出排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#生成-hprof-文件"><span class="nav-number">2.1.</span> <span class="nav-text">生成 hprof 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析-java-pidxxx-hprof-文件"><span class="nav-number">2.2.</span> <span class="nav-text">分析 java_pidxxx.hprof 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他-1"><span class="nav-number">2.3.</span> <span class="nav-text">其他</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GC日志分析"><span class="nav-number">3.</span> <span class="nav-text">GC日志分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#远程监控-Java-程序"><span class="nav-number">4.</span> <span class="nav-text">远程监控 Java 程序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-jconsole-远程连接"><span class="nav-number">4.1.</span> <span class="nav-text">使用 jconsole 远程连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-jvisualvm-远程连接"><span class="nav-number">4.2.</span> <span class="nav-text">使用 jvisualvm 远程连接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jprofiler-远程监控-Java-程序"><span class="nav-number">5.</span> <span class="nav-text">jprofiler 远程监控 Java 程序</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -548,7 +563,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-count">64</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
