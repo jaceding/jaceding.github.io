@@ -8159,7 +8159,7 @@
 <p>通过 error_page 命令将497状态码的链接重定向到<code>https://cip.wanxinwangluo.com:18182/</code>这个域名上</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">upstream libreSpeed &#123;</span><br><span class="line">    server 10.86.52.77:80;</span><br><span class="line">    server 10.86.122.208:80;</span><br><span class="line">    keepalive 64;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 18182 ssl http2;</span><br><span class="line">    server_name cip.wanxinwangluo.com;</span><br><span class="line">    ssl_protocols TLSv1.3 TLSv1.2;</span><br><span class="line">    ssl_ciphers EECDH:+CHACHA20:+aRSA:+AES256:!NULL:!ARIA:!CAMELLIA:!SHA:!MD5;</span><br><span class="line">    server_tokens off;</span><br><span class="line"></span><br><span class="line">    access_log /var/log/nginx/libreSpeed_access main;</span><br><span class="line">    error_log /var/log/nginx/libreSpeed_error;</span><br><span class="line">    ssl_certificate /usr/cert/wanxin/wanxinwangluo.com.cer;</span><br><span class="line">    ssl_certificate_key /usr/cert/wanxin/wanxinwangluo.com.key;</span><br><span class="line"></span><br><span class="line">    error_page 497 https://$host:$server_port$uri$is_args$args;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        add_header Access-Control-Allow-Origin *;</span><br><span class="line">        add_header Access-Control-Allow-Headers X-Requested-With;</span><br><span class="line">        add_header Access-Control-Allow-Methods GET,POST,OPTIONS;</span><br><span class="line">        add_header Cache-Control no-cache;</span><br><span class="line">        add_header X-XSS-Protection "1;mode=block";</span><br><span class="line">        add_header x-frame-options SAMEORIGIN;</span><br><span class="line">        proxy_hide_header X-Powered-By;</span><br><span class="line">        proxy_hide_header "cache-control";</span><br><span class="line">        proxy_hide_header Expires;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header REMOTE-HOST $remote_addr;</span><br><span class="line">        proxy_set_header Host  $http_host;</span><br><span class="line">        proxy_set_header X-Nginx-Proxy true;</span><br><span class="line">        proxy_set_header Connection "";</span><br><span class="line">        proxy_http_version 1.1;</span><br><span class="line">        proxy_pass http://libreSpeed;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="两次post请求过快出现499"><a href="#两次post请求过快出现499" class="headerlink" title="两次post请求过快出现499"></a>两次post请求过快出现499</h2><p>HTTP状态码 499 的意思是：<strong>客户端发起请求后，一段时间内没有收到代理服务器的应答，导致连接失败</strong>。</p>
+<h2 id="两次post请求过快出现499"><a href="#两次post请求过快出现499" class="headerlink" title="两次post请求过快出现499"></a>两次post请求过快出现499</h2><p>HTTP 状态码 499 的意思是：<strong>客户端发起请求后，一段时间内没有收到代理服务器的应答，导致连接失败</strong>。</p>
 <p>有两种可能：</p>
 <ol>
 <li><strong>代理服务器认为客户端发起的请求过于危险，所以主动给断了。（例如两次Post请求过快）</strong></li>
@@ -8168,9 +8168,9 @@
 <p>针对第一种情况，可以在 Nginx 中添加以下配置：</p>
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">proxy_ignore_client_abort on;   <span class="comment"># 代理服务器不主动关闭连接</span></span><br></pre></td></tr></table></figure>
 
-
-
-
+<h2 id="header-参数丢失"><a href="#header-参数丢失" class="headerlink" title="header 参数丢失"></a>header 参数丢失</h2><p>Nginx 做反向代理时，请求头中的 key 如果包含下划线 “_” 时，会自动忽略掉。</p>
+<p>可以在配置文件中 http 部分添加以下配置：</p>
+<figure class="highlight applescript"><table><tr><td class="code"><pre><span class="line">underscores_in_headers <span class="keyword">on</span>;</span><br></pre></td></tr></table></figure>
 
 ]]></content>
       <categories>
