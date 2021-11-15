@@ -7911,16 +7911,9 @@
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">pdsh -a free -m</span><br><span class="line">pdsh -a <span class="string">"cd /usr/local &amp;&amp; ls -l"</span></span><br></pre></td></tr></table></figure>
 
 
-
 </li>
 </ol>
-<ol start="7">
-<li><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">wget https://hub.fastgit.org/chaos/pdsh/releases/download/pdsh-2.34/pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
-
-
-
-</li>
-</ol>
+<p>如果修改了 SSH 端口，可以修改 /etc/services 中SSH的端口。</p>
 ]]></content>
       <categories>
         <category>环境搭建</category>

@@ -28,7 +28,7 @@
 <meta property="og:description" content="本文记录了服务器常用环境的一些命令总结。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-09-08T06:24:46.000Z">
-<meta property="article:modified_time" content="2021-09-26T06:15:12.294Z">
+<meta property="article:modified_time" content="2021-11-15T11:54:10.144Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="nginx">
 <meta property="article:tag" content="pdsh">
@@ -414,16 +414,9 @@
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pdsh -a free -m</span><br><span class="line">pdsh -a <span class="string">"cd /usr/local &amp;&amp; ls -l"</span></span><br></pre></td></tr></table></figure>
 
 
-
 </li>
 </ol>
-<ol start="7">
-<li><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget https://hub.fastgit.org/chaos/pdsh/releases/download/pdsh-2.34/pdsh-2.34.tar.gz</span><br></pre></td></tr></table></figure>
-
-
-
-</li>
-</ol>
+<p>如果修改了 SSH 端口，可以修改 /etc/services 中SSH的端口。</p>
 
     </div>
 
