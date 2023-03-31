@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://jaceding.github.io/2020/08/03/Java%E9%9B%86%E5%90%88-Map%E7%AF%87/LinkedHashMap.png">
 <meta property="og:image" content="https://jaceding.github.io/2020/08/03/Java%E9%9B%86%E5%90%88-Map%E7%AF%87/ConcurrentSkipListMap.png">
 <meta property="article:published_time" content="2020-08-03T09:26:49.000Z">
-<meta property="article:modified_time" content="2020-08-14T09:04:39.497Z">
+<meta property="article:modified_time" content="2022-08-07T03:28:57.767Z">
 <meta property="article:author" content="Jace Ding">
 <meta property="article:tag" content="HashMap">
 <meta property="article:tag" content="Java">
@@ -283,7 +283,7 @@
 <li><p><strong>懒加载</strong>，使用空参构造方法初始完后，只是给负载因子赋值，table并没有初始化，执行put方法后，才会将table初始化为默认大小16；且values方法和keySet方法也为懒加载，没有调用values和keySet方法之前，values和keySet为空，调用时才初始化。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * The table, initialized on first use, and resized as</span></span><br><span class="line"><span class="comment"> * necessary. When allocated, length is always a power of two.</span></span><br><span class="line"><span class="comment"> * (We also tolerate length zero in some operations to allow</span></span><br><span class="line"><span class="comment"> * bootstrapping mechanics that are currently not needed.)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">transient</span> Node&lt;K,V&gt;[] table;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Constructs an empty &lt;tt&gt;HashMap&lt;/tt&gt; with the default initial capacity</span></span><br><span class="line"><span class="comment"> * (16) and the default load factor (0.75).</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">HashMap</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.loadFactor = DEFAULT_LOAD_FACTOR; <span class="comment">// all other fields defaulted</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 </li>
-<li><p><strong>动态扩容</strong>，当 <strong>元素数量 =  容量*负载因子</strong>时触发扩容，不存在缩容。<strong>新的容量为旧容量的2倍</strong>。然后将原来的Node节点放入新的bucket数组中。这个过程叫作<strong>再散列</strong>，因为它调用hash方法找到新的bucket位置。在JDK8之前，采用的是<strong>头插法</strong>，多个线程发现需要调整hashmap的大小，他们会同时进行rehashing，这样可能<strong>导致链表产生环</strong>，rehashing过程也会死循环，其他线程执行get方法也可能会导致死循环。而JDK8采用<strong>尾插法</strong>，避免了这一点，同时JDK8如果单个链表长度大于8且table数组长度大于64时，链表会转为红黑树，这点也需要计算链表长度，正好一举两得。</p>
+<li><p><strong>动态扩容</strong>，当 <strong>元素数量 大于  容量*负载因子</strong>时触发扩容，不存在缩容。<strong>新的容量为旧容量的2倍</strong>。然后将原来的Node节点放入新的bucket数组中。这个过程叫作<strong>再散列</strong>，因为它调用hash方法找到新的bucket位置。在JDK8之前，采用的是<strong>头插法</strong>，多个线程发现需要调整hashmap的大小，他们会同时进行rehashing，这样可能<strong>导致链表产生环</strong>，rehashing过程也会死循环，其他线程执行get方法也可能会导致死循环。而JDK8采用<strong>尾插法</strong>，避免了这一点，同时JDK8如果单个链表长度大于等于8且table数组长度大于等于64时，链表会转为红黑树，这点也需要计算链表长度，正好一举两得。</p>
 </li>
 <li><p><strong>非线程安全</strong>，通过<strong>Collections.synchronizedMap()</strong>方法把它转成线程安全的集合，效率较低，推荐使用ConcurrentHashMap。</p>
 </li>
@@ -292,6 +292,7 @@
 <li><p><strong>允许key和value为null</strong>，hash函数做了判空处理</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="keyword">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<p>注：Concurrent Key 和 Value 不允许为 null，原因是在并发编程中 null 值存在歧义，若调用 get 方法返回的结果是 null 值，此时无法确定这个 key 对应的 value 本身就是 null，还是该 key 根本就不存在。在非并发编程中，可以进一步通过 containsKey 来进行判断，但是在并发编程中无法保证两个方法之间没有其他线程来修改该 key，所以应该禁用 null 值。        </p>
 </li>
 </ol>
 <h2 id="HashTable"><a href="#HashTable" class="headerlink" title="HashTable"></a>HashTable</h2><p>和JDK8之前的HashMap很相似，线程安全</p>
@@ -622,7 +623,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">68</span>
+          <span class="site-state-item-count">69</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -635,7 +636,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">178</span>
+        <span class="site-state-item-count">179</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -670,7 +671,7 @@
 <div class="copyright">
   
   &copy; 2017 – 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
